@@ -41,6 +41,18 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     return false;
   }
 
+  // **UPDATE**
+  @Override
+  public Collection<String> getCateringCompanies() {
+    return null;
+  }
+
+  // **UPDATE**
+  @Override
+  public float getDistance(String postCode1, String postCode2) {
+    return 0;
+  }
+
   @Override
   public boolean isRegistered() {
     return false;
@@ -123,6 +135,12 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
   @Override
   public LocalDateTime getDeliveryTimeForOrder(int orderNumber) {
+    return null;
+  }
+
+  // **UPDATE**
+  @Override
+  public String getClosestCateringCompany() {
     return null;
   }
 }

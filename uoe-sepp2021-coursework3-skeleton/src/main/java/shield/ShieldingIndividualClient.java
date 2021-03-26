@@ -149,4 +149,12 @@ public interface ShieldingIndividualClient extends ShieldingIndividualClientEndp
   * @return date and time of the required delivery time for the requested order
   */
   public LocalDateTime getDeliveryTimeForOrder(int orderNumber);
+
+  // **UPDATE**
+  /**
+  * Returns closest catering company serving orders based on our location
+  *
+  * @return date and time of the required delivery time for the requested order
+  */
+  public String getClosestCateringCompany();
 }

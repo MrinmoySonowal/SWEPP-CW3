@@ -22,11 +22,12 @@ public interface ShieldingIndividualClientEndpoints {
   */
   public boolean registerShieldingIndividual(String CHI);
 
+  // **UPDATE** javadoc comment fix
   /**
-  * Returns true if the operation occurred correctly
+  * Returns collection of food box ids if the operation occurred correctly
   *
   * @param dietary preference
-  * @return true if the individual using the client is registered with the server
+  * @return collection of food box ids
   */
   public Collection<String> showFoodBoxes(String dietaryPreference);
 
@@ -61,4 +62,22 @@ public interface ShieldingIndividualClientEndpoints {
   * @return true if the operation occurred correctly
   */
   public boolean requestOrderStatus(int orderNumber);
+
+  // **UPDATE**
+  /**
+  * Returns collection of catering companies and their locations
+  *
+  * @return collection of catering companies and their locations
+  */
+  public Collection<String> getCateringCompanies();
+
+  // **UPDATE**
+  /**
+  * Returns the distance between two locations based on their post codes
+  *
+  * @param postCode1 post code of one location
+  * @param postCode2 post code of another location
+  * @return the distance as a float between the two locations
+  */
+  public float getDistance(String postCode1, String postCode2);
 }
