@@ -54,6 +54,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       e.printStackTrace();
       return false;
     }
+    this.isRegistered = true;
     return true;
   }
 
@@ -94,11 +95,21 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     return 0;
   }
 
+  /**
+   * Returns if the individual using the client is registered with the server
+   *
+   * @return true if the individual using the client is registered with the server
+   */
   @Override
   public boolean isRegistered() {
-    return false;
+    return this.isRegistered;
   }
 
+  /**
+   * Returns the CHI number of the shiedling individual
+   *
+   * @return CHI number of the shiedling individual
+   */
   @Override
   public String getCHI() {
     return this.chiNum;
