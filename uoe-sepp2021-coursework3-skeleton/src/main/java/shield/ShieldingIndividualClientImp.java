@@ -7,7 +7,20 @@ package shield;
 import java.util.Collection;
 import java.time.LocalDateTime;
 
+// student-included imports:
+import java.util.Dictionary;
+
 public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
+
+  private int chiNum;
+  private boolean isRegistered;
+  private Dictionary<Integer, Integer> boxOrderIDs;
+  private int closestCatererID;
+  //private Location address;
+
+  private boolean isLoggedIn;
+  private boolean isCaterer;
+
   public ShieldingIndividualClientImp(String endpoint) {
   }
 
