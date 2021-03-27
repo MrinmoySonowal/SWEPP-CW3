@@ -5,6 +5,7 @@
 package shield;
 
 public class SupermarketClientImp implements SupermarketClient {
+  private String name;
   public SupermarketClientImp(String endpoint) {
   }
 
