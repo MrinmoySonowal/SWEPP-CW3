@@ -4,6 +4,8 @@
 
 package shield;
 
+import com.google.gson.JsonObject;
+
 import java.util.Collection;
 import java.time.LocalDateTime;
 
@@ -12,21 +14,47 @@ import java.util.Dictionary;
 
 public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
-  private int chiNum;
+  private String endpoint;
+  private String chiNum;
   private boolean isRegistered;
   private Dictionary<Integer, Integer> boxOrderIDs;
   private int closestCatererID;
   //private Location address;
-
   private boolean isLoggedIn;
   private boolean isCaterer;
 
+  private final String REG_NEW = "registered new";
+  private final String ALR_REG = "already registered";
+
   public ShieldingIndividualClientImp(String endpoint) {
+    this.endpoint = endpoint;
   }
 
+  /**
+   * Returns true if the operation occurred correctly
+   *
+   * @param CHI CHI number of the shielding individual
+   * @return true if the operation occurred correctly
+   */
   @Override
   public boolean registerShieldingIndividual(String CHI) {
-    return false;
+    String chiNum = this.chiNum;
+    // constructing endpoint request:
+    String request = String.format("/registerShieldingIndividual?CHI=%s", chiNum);
+    try {
+      // perform request:
+      String response = ClientIO.doGETRequest(endpoint + request);
+      boolean isValidResponse = (response.equals(REG_NEW) || response.equals(ALR_REG));
+      if (!isValidResponse) {
+        String errMsg = String.format("WARNING: Unexpected response for %s", request);
+        System.err.println(errMsg);
+        return false;
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+      return false;
+    }
+    return true;
   }
 
   @Override
@@ -73,7 +101,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
   @Override
   public String getCHI() {
-    return null;
+    return this.chiNum;
   }
 
   @Override
