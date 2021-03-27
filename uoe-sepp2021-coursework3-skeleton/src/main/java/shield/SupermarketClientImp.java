@@ -8,9 +8,12 @@ public class SupermarketClientImp implements SupermarketClient {
   /** The string representation of the base server endpoint (a HTTP address) */
   private String endpoint;
   private String name;
+  private String postcode;
   private int phoneNum;
+  private boolean isRegistered;
   private final String REG_NEW = "registered new";
   private final String ALR_REG = "already registered";
+
   public SupermarketClientImp(String endpoint) {
     this.endpoint = endpoint;
   }
@@ -32,6 +35,7 @@ public class SupermarketClientImp implements SupermarketClient {
       e.printStackTrace();
       return false;
     }
+    this.isRegistered = true;
     return true;
   }
 
@@ -43,16 +47,16 @@ public class SupermarketClientImp implements SupermarketClient {
 
   @Override
   public boolean isRegistered() {
-    return false;
+    return this.isRegistered;
   }
 
   @Override
   public String getName() {
-    return null;
+    return this.name;
   }
 
   @Override
   public String getPostCode() {
-    return null;
+    return this.postcode;
   }
 }
