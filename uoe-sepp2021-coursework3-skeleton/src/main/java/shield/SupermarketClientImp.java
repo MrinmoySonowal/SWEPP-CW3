@@ -21,9 +21,9 @@ public class SupermarketClientImp implements SupermarketClient {
   @Override
   public boolean registerSupermarket(String name, String postCode) {
     // construct the endpoint request
-    String request = String.format("/registerSupermarket?business name=%s&postcode=%s", name, postCode);
+    String request = String.format("/registerSupermarket?business_name=%s&postcode=%s", name, postCode);
     try {
-      String response = ClientIO.doGETRequest ( endpoint + request);
+      String response = ClientIO.doGETRequest(this.endpoint + request);
       boolean isValidResponse = (response.equals(REG_NEW) || response.equals(ALR_REG));
       if(!isValidResponse) {
         String errMsg = String.format("WARNING: Unexpected response for %s", request);
@@ -35,6 +35,8 @@ public class SupermarketClientImp implements SupermarketClient {
       e.printStackTrace();
       return false;
     }
+    this.name = name;
+    this.postcode = postCode;
     this.isRegistered = true;
     return true;
   }
