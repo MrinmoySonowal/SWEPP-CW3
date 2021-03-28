@@ -1,6 +1,6 @@
 package shield;
 
-public enum DietTypes {
+public enum DietType {
     VEGAN,
     VEGETARIAN,
     NON_DIARY,
