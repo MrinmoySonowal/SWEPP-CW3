@@ -57,4 +57,11 @@ public class CateringCompanyClientTest {
     assertTrue(client.isRegistered());
     assertEquals(client.getName(), name);
   }
+
+  @Test
+  public void testCateringCompanyUpdateOrderStatus(){
+    Random rand = new Random();
+    String[] validStatuses= {"packed", "dispatched", "delivered"};
+    String status = validStatuses[rand.nextInt(validStatuses.length)];
+  }
 }
