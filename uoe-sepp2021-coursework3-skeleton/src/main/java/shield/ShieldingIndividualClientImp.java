@@ -38,7 +38,6 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public boolean registerShieldingIndividual(String CHI) {
-    String chiNum = this.chiNum;
     // constructing endpoint request:
     String request = String.format("/registerShieldingIndividual?CHI=%s", chiNum);
     try {
@@ -55,6 +54,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       return false;
     }
     this.isRegistered = true;
+    this.chiNum = CHI;
     return true;
   }
 
