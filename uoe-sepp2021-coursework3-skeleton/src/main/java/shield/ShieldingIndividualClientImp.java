@@ -10,6 +10,7 @@ import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.time.LocalDateTime;
 
@@ -22,7 +23,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   private String endpoint;
   private String chiNum;
   private boolean isRegistered;
-  private Dictionary<Integer, Integer> boxOrderIDs;
+  private Collection<Integer> boxOrderIDs;
   private int closestCatererID;
   //private Location address;
   private boolean isLoggedIn;
@@ -30,6 +31,12 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
   private final String REG_NEW = "registered new";
   private final String ALR_REG = "already registered";
+  private final String ORDER_PLACED = "0";
+  private final String ORDER_PACKED = "1";
+  private final String ORDER_DISPATCHED = "2";
+  private final String ORDER_DELIVERED = "3";
+  private final String ORDER_CANCELLED = "4";
+  private final String ORDER_NOT_FOUND = "-1";
 
   // internal field only used for transmission purposes
   final class MessagingFoodBox {
@@ -58,7 +65,8 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     try {
       // perform request:
       String response = ClientIO.doGETRequest(endpoint + request);
-      boolean isValidResponse = (response.equals(REG_NEW) || response.equals(ALR_REG));
+      List<String> validResponses = Arrays.asList(REG_NEW, ALR_REG);
+      boolean isValidResponse = validResponses.contains(response);
       if (!isValidResponse) {
         String errMsg = String.format("WARNING: Unexpected response for %s", request);
         System.err.println(errMsg);
@@ -124,8 +132,34 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     return false;
   }
 
+  /**
+   * Returns true if the operation occurred correctly
+   *
+   * @param orderID the order number
+   * @return true if the operation occurred correctly
+   */
   @Override
-  public boolean requestOrderStatus(int orderNumber) {
+  public boolean requestOrderStatus(int orderID) {
+    // constructing endpoint request:
+    String request = String.format("/requestStatus?order id=%s", orderID);
+    try {
+      // perform request:
+      String response = ClientIO.doGETRequest(endpoint + request);
+      List<String> validStatuses = Arrays.asList(ORDER_PLACED, ORDER_PACKED, ORDER_DISPATCHED,
+                                                 ORDER_DELIVERED, ORDER_CANCELLED, ORDER_NOT_FOUND);
+      boolean isValidResponse = validStatuses.contains(response);
+      if (!isValidResponse) {
+        String errMsg = String.format("WARNING: Unexpected response for %s", request);
+        System.err.println(errMsg);
+        return false;
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+      return false;
+    }
+
+    // !! UPDATE FOOD BOX CLASS STATUS !! FIGURE OUT WAY TO DO THIS.
+
     return false;
   }
 
