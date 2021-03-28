@@ -23,7 +23,7 @@ public class CateringCompanyClientImp implements CateringCompanyClient {
       String response = ClientIO.doGETRequest(this.endpoint + request);
       boolean isValidResponse = response.equals(REG_NEW)||response.equals(ALR_REG);
       if(!isValidResponse){
-        String errMsg = "";
+        String errMsg = String.format("WARNING: Unexpected response for %s", request);
         System.err.println(errMsg);
         return false;
       }
@@ -34,7 +34,7 @@ public class CateringCompanyClientImp implements CateringCompanyClient {
     this.name = name;
     this.postCode = postCode;
     this.isRegistered = true;
-    return false;
+    return true;
   }
 
   @Override
