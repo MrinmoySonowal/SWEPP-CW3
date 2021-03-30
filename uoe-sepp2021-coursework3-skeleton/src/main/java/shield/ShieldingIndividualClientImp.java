@@ -20,15 +20,6 @@ import java.util.List;
 
 public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
-  private String endpoint;
-  private String chiNum;
-  private boolean isRegistered;
-  private Collection<Integer> boxOrderIDs;
-  private int closestCatererID;
-  //private Location address;
-  private boolean isLoggedIn;
-  private boolean isCaterer;
-
   private final String REG_NEW = "registered new";
   private final String ALR_REG = "already registered";
   private final String ORDER_PLACED = "0";
@@ -47,6 +38,21 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     String id;
     String name;
   }
+
+  private String endpoint;
+  private String chiNum;
+  private boolean isRegistered;
+  private Collection<Integer> orderIDs;
+
+  //private Dictionary<Integer, FoodBox> orders;
+
+  private Collection<MessagingFoodBox> defaultFoodBoxes;
+  private String dietaryPrefrence;
+  private int closestCatererID;
+  //private Location address;
+  private boolean isLoggedIn;
+  private boolean isCaterer;
+  private int pickedFoodBox;
 
   public ShieldingIndividualClientImp(String endpoint) {
     this.endpoint = endpoint;
@@ -106,6 +112,8 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       Type listType = new TypeToken<List<MessagingFoodBox>>() {} .getType();
       responseBoxes = new Gson().fromJson(response, listType);
 
+      this.defaultFoodBoxes = responseBoxes;
+
       // gather required fields
       for (MessagingFoodBox b : responseBoxes) {
         boxIds.add(b.id);
@@ -117,8 +125,20 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     return boxIds;
   }
 
+  /**
+   * Returns true if the operation occurred correctly
+   *
+   * @param deliveryDateTime the requested delivery date and time
+   * @return true if the operation occurred correctly
+   */
   @Override
-  public boolean placeOrder(LocalDateTime deliveryDateTime) {
+  public boolean placeOrder(LocalDateTime deliveryDateTime) { // will not use LocalDateTime
+    String request = String.format("/placeOrder?individual id=%s", this.chiNum);
+
+    // form order data using the picked food box order
+
+
+
     return false;
   }
 
@@ -132,7 +152,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     return false;
   }
 
-  /**
+  /** ## ## ## ## ## ##
    * Returns true if the operation occurred correctly
    *
    * @param orderID the order number
@@ -158,9 +178,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       return false;
     }
 
-    // !! UPDATE FOOD BOX CLASS STATUS !! FIGURE OUT WAY TO DO THIS.
+    /* # !! UPDATE FOOD BOX CLASS STATUS !! FIGURE OUT WAY TO DO THIS. !! # */
 
-    return false;
+    return true;
   }
 
   // **UPDATE**
@@ -205,10 +225,14 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     return null;
   }
 
+  /**
+   * Returns the number of items in this specific food box
+   *
+   * @param  foodBoxId the food box id as last returned from the server
+   * @return number of items in the food box
+   */
   @Override
-  public int getItemsNumberForFoodBox(int foodBoxId) {
-    return 0;
-  }
+  public int getItemsNumberForFoodBox(int foodBoxId) { return 0; }
 
   @Override
   public Collection<Integer> getItemIdsForFoodBox(int foodboxId) {
@@ -225,9 +249,22 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     return 0;
   }
 
+  /**
+   * Returns true if the requested foodbox was picked
+   *
+   * @param  foodBoxId the food box id as last returned from the server
+   * @return true if the requested foodbox was picked
+   */
   @Override
-  public boolean pickFoodBox(int foodBoxId) {
-    return false;
+  public boolean pickFoodBox(int foodBoxId) {                                       // ### ??? ###
+    Collection<String> foodBoxes = showFoodBoxes(this.dietaryPrefrence);
+    boolean isFoodBoxExist = foodBoxes.contains(String.valueOf(foodBoxId));
+    if (isFoodBoxExist) {
+      this.pickedFoodBox = foodBoxId;
+      return true;
+    } else {
+      return false;
+    }
   }
 
   @Override
