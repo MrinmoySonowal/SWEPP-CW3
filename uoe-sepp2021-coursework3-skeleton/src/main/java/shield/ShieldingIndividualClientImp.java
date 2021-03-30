@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 
 // student-included imports:
 import java.util.Dictionary;
+import java.util.Hashtable;
 import java.util.List;
 
 public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
@@ -42,17 +43,14 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   private String endpoint;
   private String chiNum;
   private boolean isRegistered;
-  private Collection<Integer> orderIDs;
-
-  //private Dictionary<Integer, FoodBox> orders;
-
+  public Dictionary<Integer, FoodBoxOrder> ordersDict = new Hashtable<>();
   private Collection<MessagingFoodBox> defaultFoodBoxes;
   private String dietaryPrefrence;
   private int closestCatererID;
   //private Location address;
   private boolean isLoggedIn;
   private boolean isCaterer;
-  private int pickedFoodBox;
+  private FoodBoxOrder pickedFoodBox;
 
   public ShieldingIndividualClientImp(String endpoint) {
     this.endpoint = endpoint;
@@ -135,9 +133,12 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public boolean placeOrder(LocalDateTime deliveryDateTime) { // will not use LocalDateTime
     String request = String.format("/placeOrder?individual id=%s", this.chiNum);
 
-    // form order data using the picked food box order
+    // form order data using the pickedFoodBox order
+
 
     // @TODO when order is placed, add this new order (FoodBox obj) to the dictionary 'orders'.
+    int orderID = 0; // ### CHANGE ###
+    ordersDict.put(orderID, this.pickedFoodBox);
 
 
     return false;
@@ -258,10 +259,23 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public boolean pickFoodBox(int foodBoxId) {                                       // ### ??? ###
-    Collection<String> foodBoxes = showFoodBoxes(this.dietaryPrefrence);
-    boolean isFoodBoxExist = foodBoxes.contains(String.valueOf(foodBoxId));
+    String foodBoxIdStr = String.valueOf(foodBoxId);
+    Collection<String> foodBoxIdArr = showFoodBoxes(this.dietaryPrefrence);
+    boolean isFoodBoxExist = foodBoxIdArr.contains(foodBoxIdStr);
     if (isFoodBoxExist) {
-      this.pickedFoodBox = foodBoxId;
+      for (MessagingFoodBox b: defaultFoodBoxes) {
+        if (b.id.equals(foodBoxIdStr)) {
+          this.pickedFoodBox = new FoodBoxOrder();
+          this.pickedFoodBox.setDeliveryService(b.delivered_by);
+          this.pickedFoodBox.setDietType(b.diet);
+          this.pickedFoodBox.setName(b.name);
+          this.pickedFoodBox.itemsDict = new Hashtable<>();
+          Collection<Integer> itemIDs = getItemIdsForFoodBox(foodBoxId);
+          for (Integer itemID: itemIDs) {
+            this.pickedFoodBox.itemsDict.put(itemID, getItemQuantityForFoodBox(itemID, foodBoxId));
+          }
+        }
+      }
       return true;
     } else {
       return false;

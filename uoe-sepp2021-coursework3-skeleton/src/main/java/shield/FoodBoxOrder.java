@@ -1,21 +1,22 @@
 package shield;
 
 import java.time.LocalDateTime;
-import java.util.Collection;
 import java.util.Dictionary;
 
 public class FoodBoxOrder {
-    public FoodBoxOrder(int foodBoxID){
-    }
 
+    private int orderID;
+    private String name;
     private String dietType;
     private String orderStatus;
     private DeliveryStatus deliveryStatus;
     private String deliveryService;
-    private Dictionary<Integer, Integer> itemIDs;
+    public Dictionary<Integer, Integer> itemsDict;
     //private Dictionary<DietType, Collection<Integer>> dietDefaultItemIDs;
     private String orderSource;
     private LocalDateTime deliveryTime;
+
+    public FoodBoxOrder() {}
 
     public String getDietType() {
         return dietType;
@@ -31,10 +32,6 @@ public class FoodBoxOrder {
 
     public String getDeliveryService() {
         return deliveryService;
-    }
-
-    public Dictionary<Integer, Integer> getItemIDs() {
-        return itemIDs;
     }
 
     public String getOrderSource() {
@@ -61,15 +58,27 @@ public class FoodBoxOrder {
         this.deliveryService = deliveryService;
     }
 
-    public void setItemIDs(Dictionary<Integer, Integer> itemIDs) {
-        this.itemIDs = itemIDs;
-    }
-
     public void setOrderSource(String orderSource) {
         this.orderSource = orderSource;
     }
 
     public void setDeliveryTime(LocalDateTime deliveryTime) {
         this.deliveryTime = deliveryTime;
+    }
+
+    public int getOrderID() {
+        return orderID;
+    }
+
+    public void setOrderID(int orderID) {
+        this.orderID = orderID;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }
