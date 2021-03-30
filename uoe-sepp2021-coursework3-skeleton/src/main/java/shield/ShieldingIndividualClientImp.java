@@ -137,6 +137,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
     // form order data using the picked food box order
 
+    // @TODO when order is placed, add this new order (FoodBox obj) to the dictionary 'orders'.
 
 
     return false;
