@@ -5,9 +5,9 @@
 package shield;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,9 +31,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   private final String ORDER_NOT_FOUND = "-1";
 
   // internal field only used for transmission purposes
-  final class MessagingFoodBox {
+  final class MyMessagingFoodBox {
     // a field marked as transient is skipped in marshalling/unmarshalling
-    transient List<String> contents;
+    //List<HashMap<String, String>> contents;
+    List<BoxItem> contents;
     String delivered_by;
     String diet;
     String id;
@@ -44,7 +45,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   private String chiNum;
   private boolean isRegistered;
   public Dictionary<Integer, FoodBoxOrder> ordersDict = new Hashtable<>();
-  private Collection<MessagingFoodBox> defaultFoodBoxes;
+  private List<MyMessagingFoodBox> defaultFoodBoxes;
   private String dietaryPrefrence;
   private int closestCatererID;
   //private Location address;
@@ -85,6 +86,33 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     return true;
   }
 
+  private List<MyMessagingFoodBox> getDefaultFoodBoxes(String dietaryPrefrence) {
+    if (this.defaultFoodBoxes == null) {
+      this.defaultFoodBoxes = getDefaultFoodBoxesFromServer(dietaryPrefrence);
+      return this.defaultFoodBoxes;
+    } else {
+      return this.defaultFoodBoxes;
+    }
+  }
+
+  private List<MyMessagingFoodBox> getDefaultFoodBoxesFromServer(String dietaryPrefrence) {
+    // construct the endpoint request:
+      String request = String.format("/showFoodBox?orderOption=catering&dietaryPreference=%s", dietaryPrefrence);
+      // setup the response recepient:
+      List<MyMessagingFoodBox> responseBoxes = new ArrayList<>();
+      try {
+        // perform request:
+        String response = ClientIO.doGETRequest(endpoint + request);
+        // unmarshal response:
+        Type listType = new TypeToken<List<MyMessagingFoodBox>>() {} .getType();
+        responseBoxes = new Gson().fromJson(response, listType);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+
+      return responseBoxes;
+  }
+
   // **UPDATE** javadoc comment fix
   /**
    * Returns collection of food box ids if the operation occurred correctly
@@ -95,10 +123,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   @Override
   public Collection<String> showFoodBoxes(String dietaryPreference) {
     // construct the endpoint request
-    String request = "/showFoodBox?orderOption=catering&dietaryPreference=none";
+    String request = String.format("/showFoodBox?orderOption=catering&dietaryPreference=%s", dietaryPreference);
 
     // setup the response recepient
-    List<MessagingFoodBox> responseBoxes = new ArrayList<MessagingFoodBox>();
+    List<MyMessagingFoodBox> responseBoxes = new ArrayList<MyMessagingFoodBox>();
 
     List<String> boxIds = new ArrayList<String>();
 
@@ -107,13 +135,14 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       String response = ClientIO.doGETRequest(endpoint + request);
 
       // unmarshal response
-      Type listType = new TypeToken<List<MessagingFoodBox>>() {} .getType();
+      Type listType = new TypeToken<List<MyMessagingFoodBox>>() {} .getType();
       responseBoxes = new Gson().fromJson(response, listType);
 
-      this.defaultFoodBoxes = responseBoxes;
+      //this.defaultFoodBoxes = responseBoxes;
+      //System.out.println((responseBoxes.get(0).contents.get(0).name));
 
       // gather required fields
-      for (MessagingFoodBox b : responseBoxes) {
+      for (MyMessagingFoodBox b : responseBoxes) {
         boxIds.add(b.id);
       }
     } catch (Exception e) {
@@ -234,10 +263,23 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    * @return number of items in the food box
    */
   @Override
-  public int getItemsNumberForFoodBox(int foodBoxId) { return 0; }
+  public int getItemsNumberForFoodBox(int foodBoxId) {
+    //TODO what does "as last returned from the server" mean?
+    List<MyMessagingFoodBox> foodBoxes = getDefaultFoodBoxes("none");
+    int numOfItems = 0;
+    for (MyMessagingFoodBox b : foodBoxes) {
+      if (Integer.parseInt(b.id) == foodBoxId) {
+        numOfItems = b.contents.size();
+        break;
+      }
+    }
+    return numOfItems;
+  }
 
   @Override
   public Collection<Integer> getItemIdsForFoodBox(int foodboxId) {
+
+
     return null;
   }
 
@@ -262,18 +304,17 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     String foodBoxIdStr = String.valueOf(foodBoxId);
     Collection<String> foodBoxIdArr = showFoodBoxes(this.dietaryPrefrence);
     boolean isFoodBoxExist = foodBoxIdArr.contains(foodBoxIdStr);
+
+    List<MyMessagingFoodBox> defaultFoodBoxes = getDefaultFoodBoxes(this.dietaryPrefrence);
+
     if (isFoodBoxExist) {
-      for (MessagingFoodBox b: defaultFoodBoxes) {
-        if (b.id.equals(foodBoxIdStr)) {
+      for (MyMessagingFoodBox b: defaultFoodBoxes) {
+        if (Integer.parseInt(b.id) == foodBoxId) {
           this.pickedFoodBox = new FoodBoxOrder();
           this.pickedFoodBox.setDeliveryService(b.delivered_by);
           this.pickedFoodBox.setDietType(b.diet);
           this.pickedFoodBox.setName(b.name);
-          this.pickedFoodBox.itemsDict = new Hashtable<>();
-          Collection<Integer> itemIDs = getItemIdsForFoodBox(foodBoxId);
-          for (Integer itemID: itemIDs) {
-            this.pickedFoodBox.itemsDict.put(itemID, getItemQuantityForFoodBox(itemID, foodBoxId));
-          }
+          this.pickedFoodBox.setItemsList(b.contents);
         }
       }
       return true;
