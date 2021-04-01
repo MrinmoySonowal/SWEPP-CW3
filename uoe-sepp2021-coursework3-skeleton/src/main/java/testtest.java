@@ -1,8 +1,10 @@
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import shield.DietType;
 import shield.ShieldingIndividualClientImp;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.List;
 
 public class testtest {
@@ -13,7 +15,10 @@ public class testtest {
         int quantity;
     }
 
+    private final List<String> DIET_TYPES = List.of("none", "pollotarian", "vegan");
+
     public static void main(String[] args) {
+        /*
         String contents = "[\n" +
                 "            {\n" +
                 "              \"id\":1,\n" +
@@ -31,11 +36,30 @@ public class testtest {
                 "              \"quantity\":1\n" +
                 "            }\n" +
                 "            ]";
-        Type listType = new TypeToken<List<testtest.MessagingContents>>() {} .getType();
-        List<MessagingContents> responseBoxes = new Gson().fromJson(contents, listType);
-        for (MessagingContents responseBox : responseBoxes) {
-            System.out.println(responseBox.quantity);
+        */
+
+        try {
+            String contents = "";
+            Type listType = new TypeToken<List<testtest.MessagingContents>>() {
+            }.getType();
+            List<MessagingContents> responseBoxes = new Gson().fromJson(contents, listType);
+            //System.out.println(responseBoxes);
+            if (responseBoxes == null) throw new NullPointerException("NPE!");
+
+            for (MessagingContents responseBox : responseBoxes) {
+                System.out.println(responseBox.quantity);
+            }
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
         }
+
+
+        List<String> testList = new ArrayList<>();
+        System.out.println("sdf");
+        for (String str : testList) {
+            System.out.println(str);
+        }
+        System.out.println("adf");
     }
 
 }

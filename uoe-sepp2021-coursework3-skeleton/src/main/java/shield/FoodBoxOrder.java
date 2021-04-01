@@ -1,8 +1,7 @@
 package shield;
 
 import java.time.LocalDateTime;
-import java.util.Dictionary;
-import java.util.List;
+import java.util.Map;
 
 public class FoodBoxOrder {
 
@@ -12,8 +11,7 @@ public class FoodBoxOrder {
     private String orderStatus;
     private DeliveryStatus deliveryStatus;
     private String deliveryService;
-    private List<BoxItem> itemsList;
-    //private Dictionary<DietType, Collection<Integer>> dietDefaultItemIDs;
+    public Map<Integer, BoxItem> itemsDict;
     private String orderSource;
     private LocalDateTime deliveryTime;
 
@@ -83,11 +81,5 @@ public class FoodBoxOrder {
         this.name = name;
     }
 
-    public List<BoxItem> getItemsList() {
-        return itemsList;
-    }
 
-    public void setItemsList(List<BoxItem> itemsList) {
-        this.itemsList = itemsList;
-    }
 }
