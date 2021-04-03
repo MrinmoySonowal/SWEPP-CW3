@@ -5,7 +5,9 @@ import shield.ShieldingIndividualClientImp;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class testtest {
 
@@ -55,12 +57,21 @@ public class testtest {
 
 
         List<String> testList = new ArrayList<>();
-        System.out.println("sdf");
+        //System.out.println("sdf");
         for (String str : testList) {
-            System.out.println(str);
+            //System.out.println(str);
         }
-        System.out.println("adf");
+        //System.out.println("adf");
+
+
+        Map<Integer, Integer> hashm = new HashMap<>();
+        hashm.put(1,1);
+        hashm.put(2,2);
+        hashm.put(3,3);
+        System.out.println(hashm.size());
+
     }
+
 
 }
 

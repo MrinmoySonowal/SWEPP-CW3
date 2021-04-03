@@ -7,6 +7,7 @@ package shield;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,16 +31,17 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   private final String ORDER_NOT_FOUND = "-1";
   private List<String> DIET_TYPES = List.of("none", "pollotarian", "vegan");
 
-  // internal field only used for transmission purposes
-  final class MyMessagingFoodBox {
-    // a field marked as transient is skipped in marshalling/unmarshalling
-    //List<HashMap<String, String>> contents;
+  /** Internal field only used for transmission purposes;
+   * Temporary format for storing food box details (as returned from server). */
+  private final class MyMessagingFoodBox {
     List<BoxItem> contents;
     String delivered_by;
     String diet;
     String id;
     String name;
 
+    /** Creates dictionary of food box items using 'contents' list;
+     * Key is item id, Value is food BoxItem ref. */
     private Map<Integer, BoxItem> getContentsDict() {
       if (this.contents == null) {contents = new ArrayList<>();}  // method returns null
       Map<Integer, BoxItem> contentsDict = new HashMap<>();
@@ -53,13 +55,16 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   private String endpoint;
   private String chiNum;
   private boolean isRegistered;
-  public Map<Integer, FoodBoxOrder> ordersDict = new HashMap<>();
+  /** Dictionary storing shielding individual's orders; key is orderID, value is FoodBoxOrder ref. */
+  private Map<Integer, FoodBoxOrder> ordersDict = new HashMap<>();
+  /** Dictionary storing all default food boxes available in the system; key is food box id, value is MyMessagingFoodBox ref. */
   private Map<Integer, MyMessagingFoodBox> defaultFoodBoxes = new HashMap<>();
   private String dietaryPreference;
   private int closestCatererID;
   //private Location address;
   private boolean isLoggedIn;
   private boolean isCaterer;
+  /** Stores FoodBoxOrder obj of the user-picked food box. Is picked according to food box id. */
   private FoodBoxOrder pickedFoodBox;
 
   public ShieldingIndividualClientImp(String endpoint) {
@@ -79,6 +84,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     try {
       // perform request:
       String response = ClientIO.doGETRequest(endpoint + request);
+      // check if server resopnse is valid:
       List<String> validResponses = Arrays.asList(REG_NEW, ALR_REG);
       boolean isValidResponse = validResponses.contains(response);
       if (!isValidResponse) {
@@ -95,6 +101,13 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     return true;
   }
 
+  /**
+   * Method to obtain full list of default food boxes.
+   * Tries first to obtain from local 'cache' of default food box items;
+   * If local cache is empty, query server directly.
+   *
+   * @return dictionary of (all) default food boxes.
+   */
   private Map<Integer, MyMessagingFoodBox> getDefaultFoodBoxesDict() {
     if (this.defaultFoodBoxes == null) {
       this.defaultFoodBoxes = getDefaultFoodBoxesDictFromServer();
@@ -104,10 +117,13 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     }
   }
 
-  /* MAGIC SERVER QUERY FUNCTION: */
+  /**
+   * Method to query full list of default food boxes from server.
+   *
+   * @return dictionary of (all) default food boxes as found on server.
+   */
   private Map<Integer, MyMessagingFoodBox> getDefaultFoodBoxesDictFromServer() {
     Map<Integer, MyMessagingFoodBox> responseBoxesDict = new HashMap<>();
-
     for (String dietaryPrefrence : DIET_TYPES) {
       // setup the response recepient:
       List<MyMessagingFoodBox> responseBoxes = new ArrayList<>();
@@ -117,8 +133,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         // perform request:
         String response = ClientIO.doGETRequest(endpoint + request);
         // unmarshal response:
-        Type listType = new TypeToken<List<MyMessagingFoodBox>>() {
-        }.getType();
+        Type listType = new TypeToken<List<MyMessagingFoodBox>>() {}.getType();
         responseBoxes = new Gson().fromJson(response, listType);
 
         if (responseBoxes == null) throw new NullPointerException("ERROR: Server GET Request failed.");
@@ -135,18 +150,20 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       // TODO: Figure out how to deal with the case where responseBoxesDict = null
   }
 
-  // **UPDATE** javadoc comment fix
   /**
    * Returns collection of food box ids if the operation occurred correctly
    *
    * @param dietaryPreference dietary preference
    * @return collection of food box ids
+   * @throws IllegalArgumentException if inputted dietaryPreference is invalid.
    */
   @Override
-  public Collection<String> showFoodBoxes(String dietaryPreference) {
-    Map<Integer, MyMessagingFoodBox> defaultFoodBoxesDict = getDefaultFoodBoxesDictFromServer();
+  public Collection<String> showFoodBoxes(String dietaryPreference) throws IllegalArgumentException {
+    if (!DIET_TYPES.contains(dietaryPreference)) throw new IllegalArgumentException("Inputted dietary preference not recognised.");
+
+    this.defaultFoodBoxes = getDefaultFoodBoxesDictFromServer();
     List<String> boxIds = new ArrayList<>();
-    for (Integer id : defaultFoodBoxesDict.keySet()) {
+    for (Integer id : this.defaultFoodBoxes.keySet()) {
       boxIds.add(String.valueOf(id));
     }
     /*
@@ -211,8 +228,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     return false;
   }
 
-  /** ## ## ## ## ## ##
-   * Returns true if the operation occurred correctly
+  /** Returns true if the operation occurred correctly
    *
    * @param orderID the order number
    * @return true if the operation occurred correctly
@@ -226,6 +242,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       String response = ClientIO.doGETRequest(endpoint + request);
       List<String> validStatuses = Arrays.asList(ORDER_PLACED, ORDER_PACKED, ORDER_DISPATCHED,
                                                  ORDER_DELIVERED, ORDER_CANCELLED, ORDER_NOT_FOUND);
+      // check if resposne is valid:
       boolean isValidResponse = validStatuses.contains(response);
       if (!isValidResponse) {
         String errMsg = String.format("WARNING: Unexpected response for %s", request);
@@ -237,15 +254,37 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       return false;
     }
 
-    /* # !! UPDATE FOOD BOX CLASS STATUS !! FIGURE OUT WAY TO DO THIS. !! # */
+    // TODO UPDATE FOOD BOX CLASS STATUS !! FIGURE OUT WAY TO DO THIS. !!
 
     return true;
   }
 
-  // **UPDATE**
+  /**
+   * Returns collection of catering companies and their locations
+   *
+   * @return collection of catering companies and their locations
+   */
   @Override
   public Collection<String> getCateringCompanies() {
-    return null;
+    // construct endpoint request
+    String request = "/getCaterers";
+    // construct receiver structure:
+    List<String> caterers;
+    try {
+      // perform request:
+      String response = ClientIO.doGETRequest(endpoint + request);
+      System.out.println(response);
+      // unmarshal response:
+      Type listType = new TypeToken<List<String>>() {}.getType();
+      caterers = new Gson().fromJson(response, listType);
+
+      // TODO asked on Piazza
+      if (caterers == null) throw new NullPointerException("ERROR: Server GET Request failed.");
+    } catch (Exception e) {
+      e.printStackTrace();
+      return null;
+    }
+    return caterers;
   }
 
   // **UPDATE**
@@ -274,11 +313,16 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     return this.chiNum;
   }
 
+  /**
+   * Returns the number of available food boxes after quering the server
+   *
+   * @return number of available food boxes after quering the server
+   */
   @Override
   public int getFoodBoxNumber() {
-    return 0;
+    this.defaultFoodBoxes = getDefaultFoodBoxesDictFromServer();
+    return defaultFoodBoxes.size();
   }
-
 
   /**
    * Returns the dietary preference that this specific food box satisfies
@@ -288,7 +332,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public String getDietaryPreferenceForFoodBox(int foodBoxId) {
-    return null;
+    return this.defaultFoodBoxes.get(foodBoxId).diet;
   }
 
   /**
@@ -312,6 +356,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   @Override
   public Collection<Integer> getItemIdsForFoodBox(int foodboxId) {
     Map<Integer, MyMessagingFoodBox> foodBoxesDict = getDefaultFoodBoxesDict();
+    // find set of itemIds for food box with id == foodboxId:
     return new ArrayList<>(foodBoxesDict.get(foodboxId).getContentsDict().keySet());
   }
 
@@ -349,14 +394,17 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public boolean pickFoodBox(int foodBoxId) {                                       // ### ??? ###
-    Map<Integer, MyMessagingFoodBox> foodBoxesDict = getDefaultFoodBoxesDict();
-    if (!foodBoxesDict.containsKey(foodBoxId)) {return false;}
-    MyMessagingFoodBox chosenFoodBox = foodBoxesDict.get(foodBoxId);
+    // update local default food boxes 'cache' via server query:
+    this.defaultFoodBoxes = getDefaultFoodBoxesDictFromServer();
+
+    if (!this.defaultFoodBoxes.containsKey(foodBoxId)) {return false;}
+
+    MyMessagingFoodBox chosenFoodBox = this.defaultFoodBoxes.get(foodBoxId);
     this.pickedFoodBox = new FoodBoxOrder();
     this.pickedFoodBox.setDeliveryService(chosenFoodBox.delivered_by);
     this.pickedFoodBox.setDietType(chosenFoodBox.diet);
     this.pickedFoodBox.setName(chosenFoodBox.name);
-    this.pickedFoodBox.itemsDict = chosenFoodBox.getContentsDict();
+    this.pickedFoodBox.setItemsDict(chosenFoodBox.getContentsDict());
     return true;
   }
 

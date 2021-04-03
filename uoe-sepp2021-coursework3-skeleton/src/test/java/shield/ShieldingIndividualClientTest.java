@@ -52,6 +52,7 @@ public class ShieldingIndividualClientTest {
     Random rand = new Random();
     String chi = String.valueOf(rand.nextInt(10000));
     System.out.println(client.showFoodBoxes("none"));
+    System.out.println(client.getCateringCompanies());
 
 
     assertTrue(client.registerShieldingIndividual(chi));

@@ -11,7 +11,7 @@ public class FoodBoxOrder {
     private String orderStatus;
     private DeliveryStatus deliveryStatus;
     private String deliveryService;
-    public Map<Integer, BoxItem> itemsDict;
+    private Map<Integer, BoxItem> itemsDict;
     private String orderSource;
     private LocalDateTime deliveryTime;
 
@@ -82,4 +82,11 @@ public class FoodBoxOrder {
     }
 
 
+    public Map<Integer, BoxItem> getItemsDict() {
+        return itemsDict;
+    }
+
+    public void setItemsDict(Map<Integer, BoxItem> itemsDict) {
+        this.itemsDict = itemsDict;
+    }
 }
