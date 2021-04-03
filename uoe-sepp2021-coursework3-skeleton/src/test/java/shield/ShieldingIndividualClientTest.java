@@ -56,4 +56,11 @@ public class ShieldingIndividualClientTest {
     assertTrue(client.isRegistered());
     assertEquals(client.getCHI(), chi);
   }
+
+  @Test
+  @Tag("Testing-tags")
+  @DisplayName("Testing Tag at ShiedlingIndTest")
+  public void testTag2() {
+    assertEquals(2,2);
+  }
 }

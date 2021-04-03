@@ -48,13 +48,19 @@ public class SupermarketClientTest {
 
 
   @Test
+  @Tag("Testing-supermarket-registration")
   public void testSupermarketNewRegistration() {
     Random rand = new Random();
     String name = String.valueOf(rand.nextInt(10000));
     String postCode = String.valueOf(rand.nextInt(10000));
-
     assertTrue(client.registerSupermarket(name, postCode));
     assertTrue(client.isRegistered());
-    assertEquals(client.getName(), name);
   }
+  @Test
+  @Tag("Testing-tags")
+  @DisplayName("Testing Tag at SupermarketClientTest")
+  public void testTag() {
+    assertEquals(1,1);
+  }
+
 }
