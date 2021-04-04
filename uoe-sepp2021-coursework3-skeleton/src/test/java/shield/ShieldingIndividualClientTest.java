@@ -54,6 +54,8 @@ public class ShieldingIndividualClientTest {
     System.out.println(client.showFoodBoxes("none"));
     System.out.println(client.getCateringCompanies());
 
+    client.pickFoodBox(1);
+    client.placeOrder(null);
 
     assertTrue(client.registerShieldingIndividual(chi));
     assertTrue(client.isRegistered());

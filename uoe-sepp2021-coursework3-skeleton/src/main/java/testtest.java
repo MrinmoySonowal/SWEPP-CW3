@@ -1,8 +1,12 @@
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
+import shield.BoxItem;
 import shield.DietType;
+import shield.FoodBoxOrder;
 import shield.ShieldingIndividualClientImp;
 
+import javax.swing.*;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -55,7 +59,40 @@ public class testtest {
             System.out.println(e.getMessage());
         }
 
+        List<BoxItem> testList = new ArrayList<>();
+        BoxItem item1 = new BoxItem();
+        item1.setId(1);
+        item1.setName("item1");
+        item1.setQuantity(1);
+        BoxItem item2 = new BoxItem();
+        item2.setId(2);
+        item2.setName("item2");
+        item2.setQuantity(2);
+        testList.add(item1);
+        testList.add(item2);
 
+        HashMap<String, List<BoxItem>> dict = new HashMap<>();
+        dict.put("contents", testList);
+
+        Gson gson = new Gson();
+        String items = gson.toJson(testList);
+        System.out.printf("{\"contents\":%s}%n", items);
+
+
+        FoodBoxOrder order = new FoodBoxOrder();
+        Map<Integer, BoxItem> itemsDict = new HashMap<>();
+        itemsDict.put(item1.getId(), item1);
+        itemsDict.put(item2.getId(), item2);
+        order.setItemsDict(itemsDict);
+        System.out.println(order.getItemsDict());
+        //order.getItemsDict().get(1).setQuantity(100);
+        Map<Integer, BoxItem> newMap = order.getItemsDict();
+        newMap.get(1).setQuantity(100);
+        System.out.println(newMap);
+        System.out.println(order.getItemsDict());
+
+
+        /*
         List<String> testList = new ArrayList<>();
         //System.out.println("sdf");
         for (String str : testList) {
@@ -69,7 +106,7 @@ public class testtest {
         hashm.put(2,2);
         hashm.put(3,3);
         System.out.println(hashm.size());
-
+        */
     }
 
 

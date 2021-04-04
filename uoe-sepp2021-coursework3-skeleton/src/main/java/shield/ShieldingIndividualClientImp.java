@@ -7,6 +7,7 @@ package shield;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+import javax.swing.*;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -15,6 +16,7 @@ import java.util.Collection;
 import java.time.LocalDateTime;
 
 // student-included imports:
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +48,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       if (this.contents == null) {contents = new ArrayList<>();}  // method returns null
       Map<Integer, BoxItem> contentsDict = new HashMap<>();
       for (BoxItem item : this.contents) {
-        contentsDict.put(item.id, item);
+        contentsDict.put(item.getId(), item);
       }
       return contentsDict;
     }
@@ -136,6 +138,8 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         Type listType = new TypeToken<List<MyMessagingFoodBox>>() {}.getType();
         responseBoxes = new Gson().fromJson(response, listType);
 
+        // TODO decide whether to keep error handling or use assertions:
+        //assert responseBoxes != null;
         if (responseBoxes == null) throw new NullPointerException("ERROR: Server GET Request failed.");
 
         for (MyMessagingFoodBox b : responseBoxes) {
@@ -155,45 +159,14 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    *
    * @param dietaryPreference dietary preference
    * @return collection of food box ids
-   * @throws IllegalArgumentException if inputted dietaryPreference is invalid.
    */
   @Override
-  public Collection<String> showFoodBoxes(String dietaryPreference) throws IllegalArgumentException {
-    if (!DIET_TYPES.contains(dietaryPreference)) throw new IllegalArgumentException("Inputted dietary preference not recognised.");
-
+  public Collection<String> showFoodBoxes(String dietaryPreference) {
     this.defaultFoodBoxes = getDefaultFoodBoxesDictFromServer();
     List<String> boxIds = new ArrayList<>();
     for (Integer id : this.defaultFoodBoxes.keySet()) {
       boxIds.add(String.valueOf(id));
     }
-    /*
-    // construct the endpoint request
-    String request = String.format("/showFoodBox?orderOption=catering&dietaryPreference=%s", dietaryPreference);
-
-    // setup the response recepient
-    List<MyMessagingFoodBox> responseBoxes = new ArrayList<MyMessagingFoodBox>();
-
-    List<String> boxIds = new ArrayList<String>();
-
-    try {
-      // perform request
-      String response = ClientIO.doGETRequest(endpoint + request);
-
-      // unmarshal response
-      Type listType = new TypeToken<List<MyMessagingFoodBox>>() {} .getType();
-      responseBoxes = new Gson().fromJson(response, listType);
-
-      //this.defaultFoodBoxes = responseBoxes;
-      //System.out.println((responseBoxes.get(0).contents.get(0).name));
-
-      // gather required fields
-      for (MyMessagingFoodBox b : responseBoxes) {
-        boxIds.add(b.id);
-      }
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    */
     return boxIds;
   }
 
@@ -205,21 +178,46 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public boolean placeOrder(LocalDateTime deliveryDateTime) { // will not use LocalDateTime
-    String request = String.format("/placeOrder?individual id=%s", this.chiNum);
+    if(this.pickedFoodBox == null) return false;
+    String request = String.format("/placeOrder?individual_id=%s", this.chiNum);
 
+    List<BoxItem> boxItemsList = new ArrayList<>(this.pickedFoodBox.getItemsDict().values());
+
+    Gson gson = new Gson();
+    String items = gson.toJson(boxItemsList);
+    String data = String.format("{\"contents\":%s}%n", items);
+    System.out.println(data);
     // form order data using the pickedFoodBox order
-
-
-    // @TODO when order is placed, add this new order (FoodBox obj) to the dictionary 'orders'.
-    int orderID = 0; // ### CHANGE ###
-    ordersDict.put(orderID, this.pickedFoodBox);
-
-
-    return false;
+    try {
+      String orderID = ClientIO.doPOSTRequest(endpoint + request, data);
+      this.pickedFoodBox.setOrderStatus(ORDER_PLACED);
+      ordersDict.put(Integer.parseInt(orderID), this.pickedFoodBox);
+      return true;
+    } catch (Exception e) {
+      e.printStackTrace();
+      return false;
+    }
   }
 
+  /**
+   * Returns true if the operation occurred correctly
+   *
+   * @param orderNumber the order number
+   * @return true if the operation occurred correctly
+   */
   @Override
   public boolean editOrder(int orderNumber) {
+    // check if orderNumber exists:
+    if (!this.ordersDict.containsKey(orderNumber)) return false;
+
+    boolean isOrderPlaced = this.ordersDict.get(orderNumber).getOrderStatus().equals(ORDER_PLACED);
+    boolean isOrderPacked = this.ordersDict.get(orderNumber).getOrderStatus().equals(ORDER_PACKED);
+    if (!isOrderPlaced || !isOrderPacked) return false;
+
+    String request = String.format("/editOrder?order_id=%s", orderNumber);
+
+    // TODO come back to this after implementing the helper functions
+
     return false;
   }
 
@@ -235,28 +233,27 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public boolean requestOrderStatus(int orderID) {
+    if(!this.ordersDict.containsKey(orderID)) return false;
     // constructing endpoint request:
-    String request = String.format("/requestStatus?order id=%s", orderID);
+    String request = String.format("/requestStatus?order_id=%s", orderID);
     try {
       // perform request:
-      String response = ClientIO.doGETRequest(endpoint + request);
+      String statusResponse = ClientIO.doGETRequest(endpoint + request);
+      // check if resposne is valid:
       List<String> validStatuses = Arrays.asList(ORDER_PLACED, ORDER_PACKED, ORDER_DISPATCHED,
                                                  ORDER_DELIVERED, ORDER_CANCELLED, ORDER_NOT_FOUND);
-      // check if resposne is valid:
-      boolean isValidResponse = validStatuses.contains(response);
+      boolean isValidResponse = validStatuses.contains(statusResponse);
       if (!isValidResponse) {
         String errMsg = String.format("WARNING: Unexpected response for %s", request);
         System.err.println(errMsg);
         return false;
       }
+      this.ordersDict.get(orderID).setOrderStatus(statusResponse);
+      return true;
     } catch (Exception e) {
       e.printStackTrace();
       return false;
     }
-
-    // TODO UPDATE FOOD BOX CLASS STATUS !! FIGURE OUT WAY TO DO THIS. !!
-
-    return true;
   }
 
   /**
@@ -278,7 +275,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       Type listType = new TypeToken<List<String>>() {}.getType();
       caterers = new Gson().fromJson(response, listType);
 
-      // TODO asked on Piazza
+      // TODO Decide whether to keep error handling or use assertion
       if (caterers == null) throw new NullPointerException("ERROR: Server GET Request failed.");
     } catch (Exception e) {
       e.printStackTrace();
@@ -383,7 +380,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   @Override
   public int getItemQuantityForFoodBox(int itemId, int foodBoxId) {
     Map<Integer, MyMessagingFoodBox> foodBoxesDict = getDefaultFoodBoxesDict();
-    return foodBoxesDict.get(foodBoxId).getContentsDict().get(itemId).quantity;
+    return foodBoxesDict.get(foodBoxId).getContentsDict().get(itemId).getQuantity();
   }
 
   /**
@@ -408,9 +405,20 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     return true;
   }
 
+  /**
+   * Returns true if the item quantity for the picked foodbox was changed
+   *
+   * @param  itemId the food box id as last returned from the server
+   * @param  quantity the food box item quantity to be set
+   * @return true if the item quantity for the picked foodbox was changed
+   */
   @Override
   public boolean changeItemQuantityForPickedFoodBox(int itemId, int quantity) {
-    return false;
+    if (this.pickedFoodBox == null) return false;
+    if (this.pickedFoodBox.getItemsDict().containsKey(itemId)) return false;
+
+    this.pickedFoodBox.getItemsDict().get(itemId).setQuantity(quantity);
+    return true;
   }
 
   @Override
@@ -418,29 +426,77 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     return null;
   }
 
+  /**
+   * Returns the status of the order for the requested number
+   *
+   * @param orderNumber the order number
+   * @return status of the order for the requested number
+   */
   @Override
   public String getStatusForOrder(int orderNumber) {
-    return null;
+    // return order status as stored on client-side.
+    assert (this.ordersDict.containsKey(orderNumber));
+    return this.ordersDict.get(orderNumber).getOrderStatus();
   }
 
+  /**
+   * Returns the item ids for the items of the requested order
+   *
+   * @param  orderNumber the order number
+   * @return item ids for the items of the requested order
+   */
   @Override
   public Collection<Integer> getItemIdsForOrder(int orderNumber) {
-    return null;
+    assert (this.ordersDict.containsKey(orderNumber));
+    return this.ordersDict.get(orderNumber).getItemsDict().keySet();
   }
 
+  /**
+   * Returns the name of the item for the requested order
+   *
+   * @param  itemId the food box id as last returned from the server
+   * @param  orderNumber the order number
+   * @return name of the item for the requested order
+   */
   @Override
   public String getItemNameForOrder(int itemId, int orderNumber) {
-    return null;
+    assert(this.ordersDict.containsKey(orderNumber));
+    Map<Integer, BoxItem> orderItemsDict = this.ordersDict.get(orderNumber).getItemsDict();
+    assert(orderItemsDict.containsKey(itemId));
+    return orderItemsDict.get(itemId).getName();
   }
 
+  /**
+   * Returns the quantity of the item for the requested order
+   *
+   * @param  itemId the food box id as last returned from the server
+   * @param  orderNumber the order number
+   * @return quantity of the item for the requested order
+   */
   @Override
   public int getItemQuantityForOrder(int itemId, int orderNumber) {
-    return 0;
+    assert(this.ordersDict.containsKey(orderNumber));
+    Map<Integer, BoxItem> orderItemsDict = this.ordersDict.get(orderNumber).getItemsDict();
+    assert(orderItemsDict.containsKey(itemId));
+    return orderItemsDict.get(itemId).getQuantity();
   }
 
+  /**
+   * Returns true if quantity of the item for the requested order was changed
+   *
+   * @param  itemId the food box id as last returned from the server
+   * @param  orderNumber the order number
+   * @param  quantity the food box item quantity to be set
+   * @return true if quantity of the item for the requested order was changed
+   */
   @Override
   public boolean setItemQuantityForOrder(int itemId, int orderNumber, int quantity) {
-    return false;
+    if (!this.ordersDict.containsKey(orderNumber)) return false;
+    Map<Integer, BoxItem> orderItemsDict = this.ordersDict.get(orderNumber).getItemsDict();
+    if (!orderItemsDict.containsKey(itemId)) return false;
+
+    orderItemsDict.get(itemId).setQuantity(quantity);
+    return true;
   }
 
   @Override

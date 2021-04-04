@@ -1,6 +1,7 @@
 package shield;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.Map;
 
 public class FoodBoxOrder {
@@ -11,7 +12,7 @@ public class FoodBoxOrder {
     private String orderStatus;
     private DeliveryStatus deliveryStatus;
     private String deliveryService;
-    private Map<Integer, BoxItem> itemsDict;
+    private Map<Integer, BoxItem> itemsDict = new HashMap<>();
     private String orderSource;
     private LocalDateTime deliveryTime;
 
@@ -80,7 +81,6 @@ public class FoodBoxOrder {
     public void setName(String name) {
         this.name = name;
     }
-
 
     public Map<Integer, BoxItem> getItemsDict() {
         return itemsDict;
