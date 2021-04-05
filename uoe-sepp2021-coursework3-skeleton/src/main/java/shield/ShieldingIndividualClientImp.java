@@ -173,11 +173,11 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   /**
    * Returns true if the operation occurred correctly
    *
-   * @param deliveryDateTime the requested delivery date and time
    * @return true if the operation occurred correctly
    */
+  // **UPDATE2** REMOVED PARAMETER
   @Override
-  public boolean placeOrder(LocalDateTime deliveryDateTime) { // will not use LocalDateTime
+  public boolean placeOrder() { // will not use LocalDateTime
     if(this.pickedFoodBox == null) return false;
     String request = String.format("/placeOrder?individual_id=%s", this.chiNum);
 
@@ -499,10 +499,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     return true;
   }
 
-  @Override
-  public LocalDateTime getDeliveryTimeForOrder(int orderNumber) {
-    return null;
-  }
+  // **UPDATE2** REMOVED METHOD getDeliveryTimeForOrder
 
   // **UPDATE**
   @Override

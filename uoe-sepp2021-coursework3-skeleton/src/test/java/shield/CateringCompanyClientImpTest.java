@@ -19,7 +19,7 @@ import java.util.Random;
  *
  */
 
-public class CateringCompanyClientTest {
+public class CateringCompanyClientImpTest {
   private final static String clientPropsFilename = "client.cfg";
 
   private Properties clientProps;
