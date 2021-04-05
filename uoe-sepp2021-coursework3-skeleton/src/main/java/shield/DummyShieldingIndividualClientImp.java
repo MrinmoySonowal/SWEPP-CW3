@@ -13,7 +13,6 @@ package shield;
 import java.util.Collection;
 import java.util.List;
 import java.util.ArrayList;
-import java.time.LocalDateTime;
 import java.lang.reflect.Type;
 
 import com.google.gson.Gson;
@@ -75,7 +74,7 @@ public class DummyShieldingIndividualClientImp implements ShieldingIndividualCli
   }
 
   @Override
-  public boolean placeOrder(LocalDateTime deliveryDateTime) {
+  public boolean placeOrder() {
     return false;
   }
 
@@ -184,11 +183,6 @@ public class DummyShieldingIndividualClientImp implements ShieldingIndividualCli
   @Override
   public boolean setItemQuantityForOrder(int itemId, int orderNumber, int quantity) {
     return false;
-  }
-
-  @Override
-  public LocalDateTime getDeliveryTimeForOrder(int orderNumber) {
-    return null;
   }
 
   // **UPDATE**
