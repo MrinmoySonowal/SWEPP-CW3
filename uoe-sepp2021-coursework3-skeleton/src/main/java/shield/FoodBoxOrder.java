@@ -10,7 +10,7 @@ public class FoodBoxOrder {
     private String name;
     private String dietType;
     private String orderStatus;
-    private DeliveryStatus deliveryStatus;
+    // REMOVED private DeliveryStatus deliveryStatus;
     private String deliveryService;
     private Map<Integer, BoxItem> itemsDict = new HashMap<>();
     private String orderSource;
@@ -26,9 +26,12 @@ public class FoodBoxOrder {
         return orderStatus;
     }
 
+    /*
+    REMOVED
     public DeliveryStatus getDeliveryStatus() {
         return deliveryStatus;
     }
+    */
 
     public String getDeliveryService() {
         return deliveryService;
@@ -50,9 +53,11 @@ public class FoodBoxOrder {
         this.orderStatus = orderStatus;
     }
 
+    /*
     public void setDeliveryStatus(DeliveryStatus deliveryStatus) {
         this.deliveryStatus = deliveryStatus;
     }
+    */
 
     public void setDeliveryService(String deliveryService) {
         this.deliveryService = deliveryService;

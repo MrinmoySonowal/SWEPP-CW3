@@ -51,14 +51,16 @@ public class ShieldingIndividualClientImpTest {
   public void testShieldingIndividualNewRegistration() {
     Random rand = new Random();
     String chi = String.valueOf(rand.nextInt(10000));
-    System.out.println(client.showFoodBoxes("none"));
+    //System.out.println(client.showFoodBoxes("none"));
     System.out.println(client.getCateringCompanies());
 
-    client.pickFoodBox(1);
-    client.placeOrder(null);
-
     assertTrue(client.registerShieldingIndividual(chi));
+    // TODO register catering company
     assertTrue(client.isRegistered());
     assertEquals(client.getCHI(), chi);
+    client.pickFoodBox(1);
+
+    client.getClosestCateringCompany();  //TODO clarify postcode formatting error from server function (e.g. eh0111)
+    client.placeOrder();
   }
 }

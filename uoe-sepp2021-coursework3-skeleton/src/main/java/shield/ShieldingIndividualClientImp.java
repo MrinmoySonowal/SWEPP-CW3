@@ -13,7 +13,6 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.time.LocalDateTime;
 
 // student-included imports:
 import java.util.Collections;
@@ -23,7 +22,6 @@ import java.util.Map;
 
 public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
-  private final String REG_NEW = "registered new";
   private final String ALR_REG = "already registered";
   private final String ORDER_PLACED = "0";
   private final String ORDER_PACKED = "1";
@@ -62,12 +60,17 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   /** Dictionary storing all default food boxes available in the system; key is food box id, value is MyMessagingFoodBox ref. */
   private Map<Integer, MyMessagingFoodBox> defaultFoodBoxes = new HashMap<>();
   private String dietaryPreference;
-  private int closestCatererID;
+  private String nearestCatererName;
+  private String nearestCateringPostCode;
   //private Location address;
   private boolean isLoggedIn;
   private boolean isCaterer;
   /** Stores FoodBoxOrder obj of the user-picked food box. Is picked according to food box id. */
   private FoodBoxOrder pickedFoodBox;
+  private String forename;
+  private String surname;
+  private String phoneNum;
+  private String postCode;
 
   public ShieldingIndividualClientImp(String endpoint) {
     this.endpoint = endpoint;
@@ -86,21 +89,27 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     try {
       // perform request:
       String response = ClientIO.doGETRequest(endpoint + request);
-      // check if server resopnse is valid:
-      List<String> validResponses = Arrays.asList(REG_NEW, ALR_REG);
-      boolean isValidResponse = validResponses.contains(response);
-      if (!isValidResponse) {
-        String errMsg = String.format("WARNING: Unexpected response for %s", request);
-        System.err.println(errMsg);
-        return false;
-      }
+      if (response.equals(ALR_REG)) return true;
+      // unmarshall response:
+      List<String> personalDetailsArr = new ArrayList<>();
+      Type listType = new TypeToken<List<String>>() {}.getType();
+      personalDetailsArr = new Gson().fromJson(response, listType);
+
+      // TODO ASK in QnA whether to use separate if-statements or use if-elseif-else block.
+      if (personalDetailsArr == null) throw new NullPointerException("ERROR: Server GET request failed.");
+      if (personalDetailsArr.size() != 4) throw new NullPointerException("ERROR: Server response corrupted.");
+      this.postCode = personalDetailsArr.get(0);
+      this.forename = personalDetailsArr.get(1);
+      this.surname = personalDetailsArr.get(2);
+      this.phoneNum = personalDetailsArr.get(3);
+      this.isRegistered = true;
+      this.chiNum = CHI;
+      return true;
+
     } catch (Exception e) {
       e.printStackTrace();
       return false;
     }
-    this.isRegistered = true;
-    this.chiNum = CHI;
-    return true;
   }
 
   /**
@@ -138,8 +147,6 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
         Type listType = new TypeToken<List<MyMessagingFoodBox>>() {}.getType();
         responseBoxes = new Gson().fromJson(response, listType);
 
-        // TODO decide whether to keep error handling or use assertions:
-        //assert responseBoxes != null;
         if (responseBoxes == null) throw new NullPointerException("ERROR: Server GET Request failed.");
 
         for (MyMessagingFoodBox b : responseBoxes) {
@@ -179,7 +186,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   @Override
   public boolean placeOrder() { // will not use LocalDateTime
     if(this.pickedFoodBox == null) return false;
-    String request = String.format("/placeOrder?individual_id=%s", this.chiNum);
+    String request = String.format("/placeOrder?individual_id=%s" +
+                                   "&catering_business_name=%s" +
+                                   "&catering_postcode=%s",
+                                   this.chiNum, this.nearestCatererName, this.nearestCateringPostCode);
 
     List<BoxItem> boxItemsList = new ArrayList<>(this.pickedFoodBox.getItemsDict().values());
 
@@ -191,7 +201,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     try {
       String orderID = ClientIO.doPOSTRequest(endpoint + request, data);
       this.pickedFoodBox.setOrderStatus(ORDER_PLACED);
-      ordersDict.put(Integer.parseInt(orderID), this.pickedFoodBox);
+      this.ordersDict.put(Integer.parseInt(orderID), this.pickedFoodBox);
       return true;
     } catch (Exception e) {
       e.printStackTrace();
@@ -221,9 +231,29 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     return false;
   }
 
+  /**
+   * Returns true if the operation occurred correctly
+   *
+   * @param orderNumber the order number
+   * @return true if the operation occurred correctly
+   */
   @Override
   public boolean cancelOrder(int orderNumber) {
-    return false;
+    // TODO
+    if (!this.ordersDict.containsKey(orderNumber)) return false;
+    String request = String.format("/cancelOrder?order_id=%s", orderNumber);
+    try {
+      String response = ClientIO.doGETRequest(endpoint + request);
+      if (response.equals("True")) {
+        this.ordersDict.remove(orderNumber);
+        return true;
+      } else {
+        return false;
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+      return false;
+    }
   }
 
   /** Returns true if the operation occurred correctly
@@ -239,7 +269,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     try {
       // perform request:
       String statusResponse = ClientIO.doGETRequest(endpoint + request);
-      // check if resposne is valid:
+      // check if response is valid:
       List<String> validStatuses = Arrays.asList(ORDER_PLACED, ORDER_PACKED, ORDER_DISPATCHED,
                                                  ORDER_DELIVERED, ORDER_CANCELLED, ORDER_NOT_FOUND);
       boolean isValidResponse = validStatuses.contains(statusResponse);
@@ -270,12 +300,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     try {
       // perform request:
       String response = ClientIO.doGETRequest(endpoint + request);
-      System.out.println(response);
       // unmarshal response:
       Type listType = new TypeToken<List<String>>() {}.getType();
       caterers = new Gson().fromJson(response, listType);
-
-      // TODO Decide whether to keep error handling or use assertion
       if (caterers == null) throw new NullPointerException("ERROR: Server GET Request failed.");
     } catch (Exception e) {
       e.printStackTrace();
@@ -285,9 +312,37 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   }
 
   // **UPDATE**
+  /**
+   * Returns the distance between two locations based on their post codes
+   *
+   * @param postCode1 post code of one location
+   * @param postCode2 post code of another location
+   * @return the distance as a float between the two locations
+   */
   @Override
   public float getDistance(String postCode1, String postCode2) {
-    return 0;
+    assert(postCode1 != null && postCode2 != null) : "PostCode cannot be null.";
+    String request = String.format("/distance?postcode1=%s&postcode2=%s", formatPostCode(postCode1), formatPostCode(postCode2));
+    try {
+      // perform request:
+      String response = ClientIO.doGETRequest(endpoint + request);
+      assert (!response.isBlank());
+      return Float.parseFloat(response);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    return -1;  // returns if exception is thrown and caught
+  }
+
+  private String formatPostCode(String postCode) {
+    if (postCode.contains(" ")) {
+      String[] codes = postCode.split(" ");
+      return String.format("%s_%s", codes[0], codes[1]);
+    } else {
+      String front = postCode.substring(0,4);  // e.g. "eh16" in "eh165ay"
+      String back = postCode.substring(4);
+      return String.format("%s_%s", front.toUpperCase(), back.toUpperCase());
+    }
   }
 
   /**
@@ -421,9 +476,18 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     return true;
   }
 
+  // **UPDATE2** COMMENT ONLY
+  /**
+   * Returns the collection of the order numbers placed.
+   *
+   * This method queries the order ids for a placed order as stored locally by
+   * the client.
+   *
+   * @return collection of the order numbers placed
+   */
   @Override
   public Collection<Integer> getOrderNumbers() {
-    return null;
+    return new ArrayList<>(this.ordersDict.keySet());
   }
 
   /**
@@ -502,8 +566,32 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   // **UPDATE2** REMOVED METHOD getDeliveryTimeForOrder
 
   // **UPDATE**
+  /**
+   * Returns closest catering company serving orders based on our location
+   *
+   * @return business name of catering company
+   */
   @Override
   public String getClosestCateringCompany() {
-    return null;
+    Collection<String> cateringCompaniesArr = this.getCateringCompanies();
+    assert(cateringCompaniesArr != null);
+
+    String nearestCatererName = null;
+    String nearestCatererPostcode = null;
+    // compare distances to ShieldingIndiv post code to find nearest catering company
+    float minDist = Float.POSITIVE_INFINITY;
+    for (String companyDetails : cateringCompaniesArr) {
+      String[] details = companyDetails.split(",");
+      String name = details[0];
+      String postCode = details[1];
+      float dist = this.getDistance(this.postCode, postCode);
+      if (dist != -1 && dist < minDist) {
+        nearestCatererName = name;
+        nearestCatererPostcode = postCode;
+      }
+    }
+    this.nearestCatererName = nearestCatererName;
+    this.nearestCateringPostCode = nearestCatererPostcode;
+    return nearestCatererName;
   }
 }

@@ -2,7 +2,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import shield.BoxItem;
-import shield.DietType;
 import shield.FoodBoxOrder;
 import shield.ShieldingIndividualClientImp;
 
@@ -50,7 +49,8 @@ public class testtest {
             }.getType();
             List<MessagingContents> responseBoxes = new Gson().fromJson(contents, listType);
             //System.out.println(responseBoxes);
-            if (responseBoxes == null) throw new NullPointerException("NPE!");
+            //if (responseBoxes == null) throw new NullPointerException("NPE!");
+            assert responseBoxes != null : "NPE!";
 
             for (MessagingContents responseBox : responseBoxes) {
                 System.out.println(responseBox.quantity);
@@ -91,6 +91,11 @@ public class testtest {
         System.out.println(newMap);
         System.out.println(order.getItemsDict());
 
+        String testString = "eh165ay";
+        String s0 = testString.substring(0,4);
+        String s1 = testString.substring(4);
+        System.out.println(s0);
+        System.out.println(s1);
 
         /*
         List<String> testList = new ArrayList<>();
