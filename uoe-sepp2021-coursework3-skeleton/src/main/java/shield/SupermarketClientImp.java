@@ -4,6 +4,9 @@
 
 package shield;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class SupermarketClientImp implements SupermarketClient {
   /** The string representation of the base server endpoint (a HTTP address) */
   private String endpoint;
@@ -11,8 +14,11 @@ public class SupermarketClientImp implements SupermarketClient {
   private String postcode;
   private int phoneNum;
   private boolean isRegistered;
+  private final String RESPONSE_TRUE = "True" ;
+  private final String RESPONSE_FALSE = "False";
   private final String REG_NEW = "registered new";
   private final String ALR_REG = "already registered";
+  private final List<String> VALID_STATUSES = Arrays.asList("packed", "dispatched", "delivered");
 
   public SupermarketClientImp(String endpoint) {
     this.endpoint = endpoint;
@@ -49,9 +55,36 @@ public class SupermarketClientImp implements SupermarketClient {
   }
 
   // **UPDATE2** ADDED METHOD
+  /**
+   * Returns true if the operation occurred correctly.
+   *
+   * Note that there is a dedicated server endpoint for implementing this called
+   * recordSupermarketOrder
+   *
+   * @param CHI CHI number of the shiedling individual associated with this order
+   * @param orderNumber the order number
+   * @return true if the operation occurred correctly
+   */
   @Override
   public boolean recordSupermarketOrder(String CHI, int orderNumber) {
-    return false;
+    String request = String.format("/recordSupermarketOrder?individual_id=%s" +
+                                   "&order_number=%s" +
+                                   "&supermarket_business_name=%s" +
+                                   "&supermarket_postcode=%s",
+                                   CHI, orderNumber, this.name, this.postcode);
+    try {
+      String response = ClientIO.doGETRequest(this.endpoint + request);
+      boolean isValidResponse = response.equals(RESPONSE_TRUE)||response.equals(RESPONSE_FALSE);
+      if(!isValidResponse){
+        String errMsg = String.format("WARNING: Unexpected response for %s", request);
+        System.err.println(errMsg);
+        return false;
+      }
+      return response.equals(RESPONSE_TRUE);
+    } catch(Exception e) {
+      e.printStackTrace();
+      return false;
+    }
   }
 
   // **UPDATE**
@@ -64,10 +97,25 @@ public class SupermarketClientImp implements SupermarketClient {
    */
   @Override
   public boolean updateOrderStatus(int orderNumber, String status) {
-
-
-
-    return false;
+    boolean isValidStatus = VALID_STATUSES.contains(status);
+    if(!isValidStatus){
+      String errMsg = String.format("%s is not a valid status",status);
+      System.err.println(errMsg);
+    }
+    String request = String.format("/updateSupermarketOrderStatus?order_id=%s&newStatus=%s",orderNumber,status);
+    try {
+      String response = ClientIO.doGETRequest(this.endpoint + request);
+      boolean isValidResponse = response.equals(RESPONSE_TRUE)||response.equals(RESPONSE_FALSE);
+      if(!isValidResponse){
+        String errMsg = String.format("WARNING: Unexpected response for %s", request);
+        System.err.println(errMsg);
+        return false;
+      }
+      return response.equals(RESPONSE_TRUE);
+    } catch(Exception e) {
+      e.printStackTrace();
+      return false;
+    }
   }
 
   @Override
