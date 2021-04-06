@@ -18,6 +18,13 @@ public class SupermarketClientImp implements SupermarketClient {
     this.endpoint = endpoint;
   }
 
+  /**
+   * Returns true if the operation occurred correctly
+   *
+   * @param name name of the business
+   * @param postCode post code of the business
+   * @return true if the operation occurred correctly
+   */
   @Override
   public boolean registerSupermarket(String name, String postCode) {
     // construct the endpoint request
@@ -42,8 +49,18 @@ public class SupermarketClientImp implements SupermarketClient {
   }
 
   // **UPDATE**
+  /**
+   * Returns true if the operation occurred correctl
+   *
+   * @param orderNumber the order number
+   * @param status status of the order for the requested number
+   * @return true if the operation occurred correctly
+   */
   @Override
   public boolean updateOrderStatus(int orderNumber, String status) {
+
+
+
     return false;
   }
 
