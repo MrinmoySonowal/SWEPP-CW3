@@ -22,6 +22,13 @@ public class CateringCompanyClientImp implements CateringCompanyClient {
     this.endpoint = endpoint;
   }
 
+  /**
+   * Returns true if the operation occurred correctly
+   *
+   * @param name name of the business
+   * @param postCode post code of the business
+   * @return true if the operation occurred correctly
+   */
   @Override
   public boolean registerCateringCompany(String name, String postCode) {
     String request = String.format("/registerCateringCompany?business_name=%s&postcode=%s",name,postCode);
@@ -43,6 +50,13 @@ public class CateringCompanyClientImp implements CateringCompanyClient {
     return true;
   }
 
+  /**
+   * Returns true if the operation occurred correctly
+   *
+   * @param orderNumber the order number
+   * @param status status of the order for the requested number
+   * @return true if the operation occurred correctly
+   */
   @Override
   public boolean updateOrderStatus(int orderNumber, String status) {
     boolean isValidStatus = VALID_STATUSES.contains(status);
