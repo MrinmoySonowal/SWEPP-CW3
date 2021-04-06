@@ -48,6 +48,12 @@ public class SupermarketClientImp implements SupermarketClient {
     return true;
   }
 
+  // **UPDATE2** ADDED METHOD
+  @Override
+  public boolean recordSupermarketOrder(String CHI, int orderNumber) {
+    return false;
+  }
+
   // **UPDATE**
   /**
    * Returns true if the operation occurred correctl
