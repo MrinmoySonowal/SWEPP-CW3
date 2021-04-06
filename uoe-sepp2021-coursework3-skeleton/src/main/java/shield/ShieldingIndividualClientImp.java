@@ -7,15 +7,12 @@ package shield;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
-import javax.swing.*;
-import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 
 // student-included imports:
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +26,8 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   private final String ORDER_DELIVERED = "3";
   private final String ORDER_CANCELLED = "4";
   private final String ORDER_NOT_FOUND = "-1";
+  private final String RESP_TRUE = "True";
+  private final String RESP_FALSE = "False";
   private List<String> DIET_TYPES = List.of("none", "pollotarian", "vegan");
 
   /** Internal field only used for transmission purposes;
@@ -62,15 +61,13 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   private String dietaryPreference;
   private String nearestCatererName;
   private String nearestCateringPostCode;
-  //private Location address;
-  private boolean isLoggedIn;
-  private boolean isCaterer;
   /** Stores FoodBoxOrder obj of the user-picked food box. Is picked according to food box id. */
   private FoodBoxOrder pickedFoodBox;
+  // TODO make the below attributes private
   private String forename;
   private String surname;
   private String phoneNum;
-  private String postCode;
+  private String postcode;
 
   public ShieldingIndividualClientImp(String endpoint) {
     this.endpoint = endpoint;
@@ -98,14 +95,13 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       // TODO ASK in QnA whether to use separate if-statements or use if-elseif-else block.
       if (personalDetailsArr == null) throw new NullPointerException("ERROR: Server GET request failed.");
       if (personalDetailsArr.size() != 4) throw new NullPointerException("ERROR: Server response corrupted.");
-      this.postCode = personalDetailsArr.get(0);
+      this.postcode = personalDetailsArr.get(0);
       this.forename = personalDetailsArr.get(1);
       this.surname = personalDetailsArr.get(2);
       this.phoneNum = personalDetailsArr.get(3);
       this.isRegistered = true;
       this.chiNum = CHI;
       return true;
-
     } catch (Exception e) {
       e.printStackTrace();
       return false;
@@ -119,9 +115,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    *
    * @return dictionary of (all) default food boxes.
    */
-  private Map<Integer, MyMessagingFoodBox> getDefaultFoodBoxesDict() {
+  private Map<Integer, MyMessagingFoodBox> getAllDefaultFoodBoxesDict() {
     if (this.defaultFoodBoxes == null) {
-      this.defaultFoodBoxes = getDefaultFoodBoxesDictFromServer();
+      this.defaultFoodBoxes = getAllDefaultFoodBoxesFromServer();
       return this.defaultFoodBoxes;
     } else {
       return this.defaultFoodBoxes;
@@ -129,36 +125,49 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   }
 
   /**
-   * Method to query full list of default food boxes from server.
+   * Method to get default food boxes for all dietary preferences.
    *
-   * @return dictionary of (all) default food boxes as found on server.
+   * @return Map of all default food boxes as found on server
    */
-  private Map<Integer, MyMessagingFoodBox> getDefaultFoodBoxesDictFromServer() {
-    Map<Integer, MyMessagingFoodBox> responseBoxesDict = new HashMap<>();
-    for (String dietaryPrefrence : DIET_TYPES) {
-      // setup the response recepient:
-      List<MyMessagingFoodBox> responseBoxes = new ArrayList<>();
-      // construct the endpoint request:
-      String request = String.format("/showFoodBox?orderOption=catering&dietaryPreference=%s", dietaryPrefrence);
-      try {
-        // perform request:
-        String response = ClientIO.doGETRequest(endpoint + request);
-        // unmarshal response:
-        Type listType = new TypeToken<List<MyMessagingFoodBox>>() {}.getType();
-        responseBoxes = new Gson().fromJson(response, listType);
-
-        if (responseBoxes == null) throw new NullPointerException("ERROR: Server GET Request failed.");
-
-        for (MyMessagingFoodBox b : responseBoxes) {
-          responseBoxesDict.put(Integer.parseInt(b.id), b);
-        }
-      } catch (Exception e) {
-        e.printStackTrace();
-        System.err.println(e.getMessage());
-      }
+  private Map<Integer, MyMessagingFoodBox> getAllDefaultFoodBoxesFromServer() {
+    Map<Integer, MyMessagingFoodBox> allDefaultFoodBoxesDict = new HashMap<>();
+    for (String dietaryPreference : DIET_TYPES) {
+      Map<Integer, MyMessagingFoodBox> specificFoodBox = getDefaultFoodBoxesFromServer(dietaryPreference);
+      allDefaultFoodBoxesDict.putAll(specificFoodBox);
     }
-      return responseBoxesDict;
-      // TODO: Figure out how to deal with the case where responseBoxesDict = null
+    return allDefaultFoodBoxesDict;
+  }
+
+  /**
+   * Method to query Map of default food boxes from server according to dietary preference.
+   *
+   * @return Map of default food boxes as found on server for dietary preference.
+   */
+  private Map<Integer, MyMessagingFoodBox> getDefaultFoodBoxesFromServer(String dietaryPreference) {
+    Map<Integer, MyMessagingFoodBox> responseBoxesDict = new HashMap<>();
+    // setup the response recepient:
+    List<MyMessagingFoodBox> responseBoxes = new ArrayList<>();
+    // construct the endpoint request:
+    String request = String.format("/showFoodBox?orderOption=catering&dietaryPreference=%s", dietaryPreference);
+    try {
+      // perform request:
+      String response = ClientIO.doGETRequest(endpoint + request);
+      // unmarshal response:
+      Type listType = new TypeToken<List<MyMessagingFoodBox>>() {}.getType();
+      responseBoxes = new Gson().fromJson(response, listType);
+
+      if (responseBoxes == null) throw new NullPointerException("ERROR: Server GET Request failed.");
+
+      for (MyMessagingFoodBox b : responseBoxes) {
+        responseBoxesDict.put(Integer.parseInt(b.id), b);
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+      System.err.println(e.getMessage());
+    }
+
+    return responseBoxesDict;
+    // TODO: Figure out how to deal with the case where responseBoxesDict = null
   }
 
   /**
@@ -169,9 +178,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public Collection<String> showFoodBoxes(String dietaryPreference) {
-    this.defaultFoodBoxes = getDefaultFoodBoxesDictFromServer();
-    List<String> boxIds = new ArrayList<>();
-    for (Integer id : this.defaultFoodBoxes.keySet()) {
+    this.defaultFoodBoxes = getAllDefaultFoodBoxesFromServer();  // updates our cache
+    Collection<Integer> boxIdsInt = getDefaultFoodBoxesFromServer(dietaryPreference).keySet();
+    List<String> boxIds = new ArrayList<String>();
+    for (int id : boxIdsInt) {
       boxIds.add(String.valueOf(id));
     }
     return boxIds;
@@ -190,9 +200,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
                                    "&catering_business_name=%s" +
                                    "&catering_postcode=%s",
                                    this.chiNum, this.nearestCatererName, this.nearestCateringPostCode);
-
     List<BoxItem> boxItemsList = new ArrayList<>(this.pickedFoodBox.getItemsDict().values());
-
     Gson gson = new Gson();
     String items = gson.toJson(boxItemsList);
     String data = String.format("{\"contents\":%s}%n", items);
@@ -219,15 +227,26 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public boolean editOrder(int orderNumber) {
     // check if orderNumber exists:
     if (!this.ordersDict.containsKey(orderNumber)) return false;
-
     boolean isOrderPlaced = this.ordersDict.get(orderNumber).getOrderStatus().equals(ORDER_PLACED);
     boolean isOrderPacked = this.ordersDict.get(orderNumber).getOrderStatus().equals(ORDER_PACKED);
     if (!isOrderPlaced || !isOrderPacked) return false;
-
     String request = String.format("/editOrder?order_id=%s", orderNumber);
-
+    List<BoxItem> boxItemsList = new ArrayList<>(this.ordersDict.get(orderNumber).getItemsDict().values());
+    Gson gson = new Gson();
+    String items = gson.toJson(boxItemsList);
+    String data = String.format("{\"contents\":%s}%n", items);
     // TODO come back to this after implementing the helper functions
-
+    try {
+      String response = ClientIO.doPOSTRequest(endpoint + request, data);
+      boolean isValidResponse = response.equals(RESP_TRUE) || response.equals(RESP_FALSE);
+      if (!isValidResponse) {
+        System.err.printf("WARNING: Unexpected response for %s", request);
+        return false;
+      }
+      return response.equals(RESP_TRUE);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
     return false;
   }
 
@@ -239,7 +258,6 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public boolean cancelOrder(int orderNumber) {
-    // TODO
     if (!this.ordersDict.containsKey(orderNumber)) return false;
     String request = String.format("/cancelOrder?order_id=%s", orderNumber);
     try {
@@ -322,7 +340,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   @Override
   public float getDistance(String postCode1, String postCode2) {
     assert(postCode1 != null && postCode2 != null) : "PostCode cannot be null.";
-    String request = String.format("/distance?postcode1=%s&postcode2=%s", formatPostCode(postCode1), formatPostCode(postCode2));
+    String request = String.format("/distance?postcode1=%s&postcode2=%s", formatPostcode(postCode1), formatPostcode(postCode2));
     try {
       // perform request:
       String response = ClientIO.doGETRequest(endpoint + request);
@@ -334,13 +352,19 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     return -1;  // returns if exception is thrown and caught
   }
 
-  private String formatPostCode(String postCode) {
-    if (postCode.contains(" ")) {
-      String[] codes = postCode.split(" ");
+  /**
+   * Formats postcode for use in server operations.
+   *
+   * @param postcode unformatted postcode
+   * @return formatted postcode
+   */
+  private String formatPostcode(String postcode) {
+    if (postcode.contains(" ")) {
+      String[] codes = postcode.split(" ");
       return String.format("%s_%s", codes[0], codes[1]);
     } else {
-      String front = postCode.substring(0,4);  // e.g. "eh16" in "eh165ay"
-      String back = postCode.substring(4);
+      String front = postcode.substring(0,4);  // e.g. "eh16" in "eh165ay"
+      String back = postcode.substring(4);
       return String.format("%s_%s", front.toUpperCase(), back.toUpperCase());
     }
   }
@@ -372,7 +396,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public int getFoodBoxNumber() {
-    this.defaultFoodBoxes = getDefaultFoodBoxesDictFromServer();
+    this.defaultFoodBoxes = getAllDefaultFoodBoxesFromServer();
     return defaultFoodBoxes.size();
   }
 
@@ -395,7 +419,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public int getItemsNumberForFoodBox(int foodBoxId) {
-    Map<Integer, MyMessagingFoodBox> foodBoxesDict = getDefaultFoodBoxesDict();
+    Map<Integer, MyMessagingFoodBox> foodBoxesDict = getAllDefaultFoodBoxesDict();
     return foodBoxesDict.get(foodBoxId).contents.size();
   }
 
@@ -407,7 +431,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public Collection<Integer> getItemIdsForFoodBox(int foodboxId) {
-    Map<Integer, MyMessagingFoodBox> foodBoxesDict = getDefaultFoodBoxesDict();
+    Map<Integer, MyMessagingFoodBox> foodBoxesDict = getAllDefaultFoodBoxesDict();
     // find set of itemIds for food box with id == foodboxId:
     return new ArrayList<>(foodBoxesDict.get(foodboxId).getContentsDict().keySet());
   }
@@ -421,7 +445,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public String getItemNameForFoodBox(int itemId, int foodBoxId) {
-    Map<Integer, MyMessagingFoodBox> foodBoxesDict = getDefaultFoodBoxesDict();
+    Map<Integer, MyMessagingFoodBox> foodBoxesDict = getAllDefaultFoodBoxesDict();
     return foodBoxesDict.get(foodBoxId).name;
   }
 
@@ -434,7 +458,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public int getItemQuantityForFoodBox(int itemId, int foodBoxId) {
-    Map<Integer, MyMessagingFoodBox> foodBoxesDict = getDefaultFoodBoxesDict();
+    Map<Integer, MyMessagingFoodBox> foodBoxesDict = getAllDefaultFoodBoxesDict();
     return foodBoxesDict.get(foodBoxId).getContentsDict().get(itemId).getQuantity();
   }
 
@@ -447,9 +471,8 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   @Override
   public boolean pickFoodBox(int foodBoxId) {                                       // ### ??? ###
     // update local default food boxes 'cache' via server query:
-    this.defaultFoodBoxes = getDefaultFoodBoxesDictFromServer();
-
-    if (!this.defaultFoodBoxes.containsKey(foodBoxId)) {return false;}
+    this.defaultFoodBoxes = getAllDefaultFoodBoxesFromServer();
+    if (!this.defaultFoodBoxes.containsKey(foodBoxId)) return false;
 
     MyMessagingFoodBox chosenFoodBox = this.defaultFoodBoxes.get(foodBoxId);
     this.pickedFoodBox = new FoodBoxOrder();
@@ -584,7 +607,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       String[] details = companyDetails.split(",");
       String name = details[0];
       String postCode = details[1];
-      float dist = this.getDistance(this.postCode, postCode);
+      float dist = this.getDistance(this.postcode, postCode);
       if (dist != -1 && dist < minDist) {
         nearestCatererName = name;
         nearestCatererPostcode = postCode;
