@@ -33,10 +33,13 @@ dependencies {
 }
 
 test {
-  useJUnitPlatform()
+  useJUnitPlatform() {
     testLogging {
       events 'PASSED', 'FAILED', 'SKIPPED', 'STANDARD_OUT', 'STANDARD_ERROR'
     }
+    includeTags "Testing-tags"
+    excludeTags "Testing-supermarket-registration"
+  }
 }
 
 // execution
