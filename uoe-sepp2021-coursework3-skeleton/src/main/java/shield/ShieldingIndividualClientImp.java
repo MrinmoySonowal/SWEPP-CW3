@@ -145,6 +145,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    *
    * @return Map of default food boxes as found on server for dietary preference.
    */
+  // TODO test this private mtd explicitly in ShieldingIndividualClientImpTest
   private Map<Integer, MyMessagingFoodBox> getDefaultFoodBoxesFromServer(String dietaryPreference) {
     Map<Integer, MyMessagingFoodBox> responseBoxesDict = new HashMap<>();
     // setup the response recepient:
@@ -240,7 +241,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       String response = ClientIO.doPOSTRequest(endpoint + request, data);
       boolean isValidResponse = response.equals(RESP_TRUE) || response.equals(RESP_FALSE);
       if (!isValidResponse) {
-        System.err.printf("WARNING: Unexpected response for %s", request);
+        System.err.printf("WARNING: Unexpected response: %s", response);
         return false;
       }
       return response.equals(RESP_TRUE);
@@ -292,7 +293,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
                                                  ORDER_DELIVERED, ORDER_CANCELLED, ORDER_NOT_FOUND);
       boolean isValidResponse = validStatuses.contains(statusResponse);
       if (!isValidResponse) {
-        String errMsg = String.format("WARNING: Unexpected response for %s", request);
+        String errMsg = String.format("WARNING: Unexpected response: %s", statusResponse);
         System.err.println(errMsg);
         return false;
       }
@@ -340,8 +341,8 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   @Override
   public float getDistance(String postcode1, String postcode2) {
     assert(postcode1 != null && postcode2 != null) : "Postcode cannot be null.";
-    assert(Pattern.matches(POSTCODE_REGEX, postcode1)) : String.format("postcode1 (%s) is of wrong format.", postcode1);
-    assert(Pattern.matches(POSTCODE_REGEX, postcode2)) : String.format("postcode2 (%s) is of wrong format.", postcode2);
+    assert(Pattern.matches(POSTCODE_REGEX, postcode1)) : String.format("postcode1 (%s) is of wrong format", postcode1);
+    assert(Pattern.matches(POSTCODE_REGEX, postcode2)) : String.format("postcode2 (%s) is of wrong format", postcode2);
     String request = String.format("/distance?postcode1=%s&postcode2=%s", postcode1, postcode2);
     try {
       // perform request:
@@ -353,25 +354,6 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     }
     return -1;  // returns if exception is thrown and caught
   }
-
-  /**
-   * Formats postcode for use in server operations.
-   *
-   * @param postcode unformatted postcode
-   * @return formatted postcode
-   */
-  /*
-  private String formatPostcode(String postcode) {
-    if (postcode.contains(" ")) {
-      String[] codes = postcode.split(" ");
-      return String.format("%s_%s", codes[0], codes[1]);
-    } else {
-      String front = postcode.substring(0,4);  // e.g. "eh16" in "eh165ay"
-      String back = postcode.substring(4);
-      return String.format("%s_%s", front.toUpperCase(), back.toUpperCase());
-    }
-  }
-*/
 
   /**
    * Returns if the individual using the client is registered with the server

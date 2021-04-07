@@ -5,8 +5,6 @@
 package shield;
 
 import org.junit.jupiter.api.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,6 +15,8 @@ import java.time.LocalDateTime;
 import java.io.InputStream;
 
 import java.util.Random;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  *
@@ -82,14 +82,79 @@ public class ShieldingIndividualClientImpTest {
   }
 
   @Test
+  @DisplayName("Test correct operation of showFoodBoxes")
   public void testShieldingIndividualShowFoodBodes() {
     // we check values against those in food_boxes.txt
-    assertEquals(client.showFoodBoxes("none"), Arrays.asList("1","3","4"));
-    assertEquals(client.showFoodBoxes("pollotarian"), Collections.singletonList("2"));
-    assertEquals(client.showFoodBoxes("vegan"), Collections.singletonList("5"));
+    assertEquals(client.showFoodBoxes("none"), Arrays.asList("1","3","4"),
+            "Working method should return IDs for boxes with diet = 'none'");
+    assertEquals(client.showFoodBoxes("pollotarian"), Collections.singletonList("2"),
+            "Working method should return IDs for boxes with diet = 'pollotarian'");
+    assertEquals(client.showFoodBoxes("vegan"), Collections.singletonList("5"),
+            "Working method should return IDs for boxes with diet = 'vegan'");
+
+    //assertEquals(client.showFoodBoxes(" "), Collections.EMPTY_LIST);
+    // TODO the above test returns false cuz server will see it as 'no dietary restriction';
+    //  this server behaviour was not specified in the documentation.
+
+    assertEquals(client.showFoodBoxes("Gibberish"), Collections.EMPTY_LIST,
+            "Working method should return no IDs since 'Gibberish' is not a valid diet type");
+  }
+
+  @Test
+  @DisplayName("Test correct operation of pickFoodBox")
+  public void testShieldingIndividualPickFoodBox() {
+    assertTrue(client.pickFoodBox(1), "Working method should return True");
+    assertTrue(client.pickFoodBox(2), "Working method should return True");
+    assertTrue(client.pickFoodBox(3), "Working method should return True");
+    assertTrue(client.pickFoodBox(4), "Working method should return True");
+    assertTrue(client.pickFoodBox(5), "Working method should return True");
+
+    assertFalse(client.pickFoodBox(19),
+            "Working method should return False since there is no food box in food_boxes.txt of ID = 19");
+  }
+
+  @Test
+  @DisplayName("Test correct operation of getDistance")
+  public void testShieldingIndividualGetDistance() {
+    assertTrue(client.getDistance("EH16_5AY", "EH56_9UG") >= 0, "Working method should return True");
+
+    AssertionError badPostcodeErr0 = assertThrows(AssertionError.class, () -> {
+      client.getDistance("eh165ay", "EH56_9UG");
+    });
+    String expectedMessage = String.format("postcode1 (%s) is of wrong format", "eh165ay");
+    String actualMessage = badPostcodeErr0.getMessage();
+    assertEquals(expectedMessage, actualMessage, "Working method should return True");
+
+    AssertionError badPostcodeErr1 = assertThrows(AssertionError.class, () -> {
+      client.getDistance("EH16_5AY", "eh569ug");
+    });
+    expectedMessage = String.format("postcode2 (%s) is of wrong format", "eh569ug");
+    actualMessage = badPostcodeErr1.getMessage();
+    assertEquals(expectedMessage, actualMessage, "Working method should return True");
+
+    AssertionError badPostcodeErr2 = assertThrows(AssertionError.class, () -> {
+      client.getDistance("eh165ay", "eh569ug");
+    });
+    expectedMessage = String.format("postcode1 (%s) is of wrong format", "eh165ay");
+    actualMessage = badPostcodeErr2.getMessage();
+    assertEquals(expectedMessage, actualMessage, "Working method should return True");
+  }
+
+  @Test
+  @DisplayName("Test correct operation of getClosestCateringCompany")
+  public void testShieldingIndividualGetClosestCaterer() {
+    client.getClosestCateringCompany();  // TODO
+
   }
 
 
+  @Test
+  @DisplayName("Test correct operation of placeOrder")
+  public void testShieldingIndividualPlaceOrder() {
+
+
+
+  }
 
 
 }
