@@ -6,6 +6,7 @@ package shield;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class SupermarketClientImp implements SupermarketClient {
   /** The string representation of the base server endpoint (a HTTP address) */
@@ -19,6 +20,7 @@ public class SupermarketClientImp implements SupermarketClient {
   private final String REG_NEW = "registered new";
   private final String ALR_REG = "already registered";
   private final List<String> VALID_STATUSES = Arrays.asList("packed", "dispatched", "delivered");
+  private final String POSTCODE_REGEX = "EH[0-9][0-9]_[0-9][A-Z][A-Z]";
 
   public SupermarketClientImp(String endpoint) {
     this.endpoint = endpoint;
@@ -33,6 +35,7 @@ public class SupermarketClientImp implements SupermarketClient {
    */
   @Override
   public boolean registerSupermarket(String name, String postCode) {
+    assert(Pattern.matches(POSTCODE_REGEX, postCode)) : String.format("Postcode %s is the wrong format", postCode);
     // construct the endpoint request
     String request = String.format("/registerSupermarket?business_name=%s&postcode=%s", name, postCode);
     try {
