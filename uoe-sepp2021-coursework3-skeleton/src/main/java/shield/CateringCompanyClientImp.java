@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 public class CateringCompanyClientImp implements CateringCompanyClient {
-  private final String ORD_STS_RESP_TRUE = "TRUE" ;
-  private final String ORD_STS_RESP_FALSE = "FALSE";
+  private final String RESP_TRUE = "True" ;
+  private final String RESP_FALSE = "False";
   private final String REG_NEW = "registered new" ;
   private final String ALR_REG = "already registered" ;
   private String endpoint;
@@ -70,13 +70,13 @@ public class CateringCompanyClientImp implements CateringCompanyClient {
     String request = String.format("/updateOrderStatus?order_id=%s&newStatus=%s",orderNumber,status);
     try {
       String response = ClientIO.doGETRequest(this.endpoint + request);
-      boolean isValidResponse = response.equals(ORD_STS_RESP_TRUE)||response.equals(ORD_STS_RESP_FALSE);
+      boolean isValidResponse = response.equals(RESP_TRUE)||response.equals(RESP_FALSE);
       if(!isValidResponse){
-        String errMsg = String.format("WARNING: Unexpected response for %s", request);
+        String errMsg = String.format("WARNING: Unexpected response: %s", response);
         System.err.println(errMsg);
         return false;
       }
-      return response.equals(ORD_STS_RESP_TRUE);
+      return response.equals(RESP_TRUE);
     } catch(Exception e) {
       e.printStackTrace();
       return false;
