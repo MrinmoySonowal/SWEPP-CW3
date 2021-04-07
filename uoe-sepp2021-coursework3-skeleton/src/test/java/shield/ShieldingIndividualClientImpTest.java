@@ -61,17 +61,24 @@ public class ShieldingIndividualClientImpTest {
     // Test functionality for new registration:
     assertTrue(client.registerShieldingIndividual(chi), "Working method (new registration) must return true.");
     assertTrue(client.isRegistered(), "Field must be true once registered.");
-    // TODO clarify: how to get indiv details from server if alr registered (and using new client obj)
+    // TODO clarify: how to get indiv details from server if alr registered (and using new client obj),
+    //  ANS: write as part of report as a limitation
     assertEquals(client.getCHI(), chi, "Client-stored CHI must be the same as inputted CHI.");
     // TODO how to test functions that are not part of the java interfaces?
+    //  ANS: dont need to test the private mtds unless they're complex enough in which test them separately
 
     // Test functionality for "already registered":
     assertTrue(client.registerShieldingIndividual(chi), "Working method (already registered) must return true.");
     assertTrue(client.isRegistered(), "Field must be true once registered.");
     assertEquals(client.getCHI(), chi, "Client-stored CHI must be the same as inputted CHI.");
     //client.pickFoodBox(1);
-    //client.getClosestCateringCompany();  //TODO clarify postcode formatting error from server function (e.g. eh0111)
+    //client.getClosestCateringCompany();
+    // TODO clarify postcode formatting error from server function (e.g. eh0111),
+    //  ANS: should be of correct format, but need to do our own checks
     //client.placeOrder();
+
+
+    // TODO check if postcode is of proper format (cuz server does not do checks).
   }
 
   @Test
@@ -80,8 +87,9 @@ public class ShieldingIndividualClientImpTest {
     assertEquals(client.showFoodBoxes("none"), Arrays.asList("1","3","4"));
     assertEquals(client.showFoodBoxes("pollotarian"), Collections.singletonList("2"));
     assertEquals(client.showFoodBoxes("vegan"), Collections.singletonList("5"));
-
-
   }
+
+
+
 
 }

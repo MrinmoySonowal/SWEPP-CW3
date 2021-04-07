@@ -16,6 +16,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
 
@@ -29,6 +30,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   private final String RESP_TRUE = "True";
   private final String RESP_FALSE = "False";
   private List<String> DIET_TYPES = List.of("none", "pollotarian", "vegan");
+  private final String POSTCODE_REGEX = "EH[0-9][0-9]_[0-9][A-Z][A-Z]";
 
   /** Internal field only used for transmission purposes;
    * Temporary format for storing food box details (as returned from server). */
@@ -165,9 +167,8 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       e.printStackTrace();
       System.err.println(e.getMessage());
     }
-
     return responseBoxesDict;
-    // TODO: Figure out how to deal with the case where responseBoxesDict = null
+    // ## note: responseBoxesDict is an empty hashmap at worst.
   }
 
   /**
@@ -235,7 +236,6 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     Gson gson = new Gson();
     String items = gson.toJson(boxItemsList);
     String data = String.format("{\"contents\":%s}%n", items);
-    // TODO come back to this after implementing the helper functions
     try {
       String response = ClientIO.doPOSTRequest(endpoint + request, data);
       boolean isValidResponse = response.equals(RESP_TRUE) || response.equals(RESP_FALSE);
@@ -333,14 +333,16 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   /**
    * Returns the distance between two locations based on their post codes
    *
-   * @param postCode1 post code of one location
-   * @param postCode2 post code of another location
+   * @param postcode1 post code of one location
+   * @param postcode2 post code of another location
    * @return the distance as a float between the two locations
    */
   @Override
-  public float getDistance(String postCode1, String postCode2) {
-    assert(postCode1 != null && postCode2 != null) : "PostCode cannot be null.";
-    String request = String.format("/distance?postcode1=%s&postcode2=%s", formatPostcode(postCode1), formatPostcode(postCode2));
+  public float getDistance(String postcode1, String postcode2) {
+    assert(postcode1 != null && postcode2 != null) : "Postcode cannot be null.";
+    assert(Pattern.matches(POSTCODE_REGEX, postcode1)) : String.format("postcode1 (%s) is of wrong format.", postcode1);
+    assert(Pattern.matches(POSTCODE_REGEX, postcode2)) : String.format("postcode2 (%s) is of wrong format.", postcode2);
+    String request = String.format("/distance?postcode1=%s&postcode2=%s", postcode1, postcode2);
     try {
       // perform request:
       String response = ClientIO.doGETRequest(endpoint + request);
@@ -358,6 +360,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    * @param postcode unformatted postcode
    * @return formatted postcode
    */
+  /*
   private String formatPostcode(String postcode) {
     if (postcode.contains(" ")) {
       String[] codes = postcode.split(" ");
@@ -368,6 +371,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       return String.format("%s_%s", front.toUpperCase(), back.toUpperCase());
     }
   }
+*/
 
   /**
    * Returns if the individual using the client is registered with the server

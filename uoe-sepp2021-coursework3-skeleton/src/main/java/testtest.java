@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 public class testtest {
 
@@ -43,6 +44,7 @@ public class testtest {
                 "            ]";
         */
 
+        /*
         try {
             String contents = "";
             Type listType = new TypeToken<List<testtest.MessagingContents>>() {
@@ -78,7 +80,6 @@ public class testtest {
         String items = gson.toJson(testList);
         System.out.printf("{\"contents\":%s}%n", items);
 
-
         FoodBoxOrder order = new FoodBoxOrder();
         Map<Integer, BoxItem> itemsDict = new HashMap<>();
         itemsDict.put(item1.getId(), item1);
@@ -96,6 +97,12 @@ public class testtest {
         String s1 = testString.substring(4);
         System.out.println(s0);
         System.out.println(s1);
+        */
+
+
+        boolean b3 = Pattern.matches("EH[0-9][0-9]_[0-9][A-Z][A-Z]","Eh16_5001");
+        System.out.println(b3);
+
 
         /*
         List<String> testList = new ArrayList<>();
