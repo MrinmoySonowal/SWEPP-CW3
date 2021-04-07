@@ -11,11 +11,18 @@
 package shield;
 
 import java.util.Collection;
-import java.time.LocalDateTime;
 
 public interface ShieldingIndividualClientEndpoints {
+  // **UPDATE2** COMMENT ONLY - CHANGES ON THE SERVER RETURN
   /**
-  * Returns true if the operation occurred correctly
+  * Returns true if the operation occurred correctly.
+  *
+  * This method returns true if the operation occurred correctly (this includes
+  * re-registrations) and false if input incorrect (null or CHI number not
+  * respecting this format:
+  * https://datadictionary.nhs.uk/attributes/community_health_index_number.html)
+  * or any of the data retrieved from the server for the shielding individual is
+  * null.
   *
   * @param CHI CHI number of the shiedling individual
   * @return true if the operation occurred correctly
@@ -26,18 +33,18 @@ public interface ShieldingIndividualClientEndpoints {
   /**
   * Returns collection of food box ids if the operation occurred correctly
   *
-  * @param dietary preference
+  * @param dietaryPreference
   * @return collection of food box ids
   */
   public Collection<String> showFoodBoxes(String dietaryPreference);
 
+  // **UPDATE2** REMOVED PARAMETER
   /**
   * Returns true if the operation occurred correctly
   *
-  * @param deliveryDateTime the requested delivery date and time
   * @return true if the operation occurred correctly
   */
-  public boolean placeOrder(LocalDateTime deliveryDateTime);
+  public boolean placeOrder();
 
   /**
   * Returns true if the operation occurred correctly

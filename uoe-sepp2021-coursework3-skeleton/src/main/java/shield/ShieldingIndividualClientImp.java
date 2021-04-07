@@ -5,7 +5,6 @@
 package shield;
 
 import java.util.Collection;
-import java.time.LocalDateTime;
 
 public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public ShieldingIndividualClientImp(String endpoint) {
@@ -21,8 +20,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     return null;
   }
 
+  // **UPDATE2** REMOVED PARAMETER
   @Override
-  public boolean placeOrder(LocalDateTime deliveryDateTime) {
+  public boolean placeOrder() {
     return false;
   }
 
@@ -133,10 +133,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     return false;
   }
 
-  @Override
-  public LocalDateTime getDeliveryTimeForOrder(int orderNumber) {
-    return null;
-  }
+  // **UPDATE2** REMOVED METHOD getDeliveryTimeForOrder
 
   // **UPDATE**
   @Override
