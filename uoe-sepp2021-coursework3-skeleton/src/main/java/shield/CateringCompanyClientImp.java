@@ -33,7 +33,7 @@ public class CateringCompanyClientImp implements CateringCompanyClient {
    */
   @Override
   public boolean registerCateringCompany(String name, String postCode) {
-    assert (Pattern.matches(POSTCODE_REGEX, postCode)):String.format("Postcode %s is the wrong format", postCode);
+    assert(Pattern.matches(POSTCODE_REGEX, postCode)) : String.format("Postcode %s is the wrong format", postCode);
     String request = String.format("/registerCateringCompany?business_name=%s&postcode=%s",name,postCode);
     try {
       String response = ClientIO.doGETRequest(this.endpoint + request);
