@@ -6,6 +6,7 @@ package shield;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class CateringCompanyClientImp implements CateringCompanyClient {
   private final String ORD_STS_RESP_TRUE = "TRUE" ;
@@ -17,6 +18,7 @@ public class CateringCompanyClientImp implements CateringCompanyClient {
   private String postCode;
   private boolean isRegistered;
   private final List<String> VALID_STATUSES = Arrays.asList("packed", "dispatched", "delivered");
+  private final String POSTCODE_REGEX = "EH[0-9][0-9]_[0-9][A-Z][A-Z]";
 
   public CateringCompanyClientImp(String endpoint) {
     this.endpoint = endpoint;
@@ -31,6 +33,7 @@ public class CateringCompanyClientImp implements CateringCompanyClient {
    */
   @Override
   public boolean registerCateringCompany(String name, String postCode) {
+    assert (Pattern.matches(POSTCODE_REGEX, postCode)):String.format("Postcode %s is the wrong format", postCode);
     String request = String.format("/registerCateringCompany?business_name=%s&postcode=%s",name,postCode);
     try {
       String response = ClientIO.doGETRequest(this.endpoint + request);
@@ -64,7 +67,7 @@ public class CateringCompanyClientImp implements CateringCompanyClient {
       String errMsg = String.format("%s is not a valid status",status);
       System.err.println(errMsg);
     }
-    String request = String.format("/updateOrderStatus?order id=%s&newStatus=%s",orderNumber,status);
+    String request = String.format("/updateOrderStatus?order_id=%s&newStatus=%s",orderNumber,status);
     try {
       String response = ClientIO.doGETRequest(this.endpoint + request);
       boolean isValidResponse = response.equals(ORD_STS_RESP_TRUE)||response.equals(ORD_STS_RESP_FALSE);
