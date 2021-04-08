@@ -47,6 +47,7 @@ public class ShieldingIndividualClientImpTest {
     clientProps = loadProperties(clientPropsFilename);
 
     client = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
+
   }
 
 
@@ -77,8 +78,6 @@ public class ShieldingIndividualClientImpTest {
     //  ANS: should be of correct format, but need to do our own checks
     //client.placeOrder();
 
-
-    // TODO check if postcode is of proper format (cuz server does not do checks).
   }
 
   @Test

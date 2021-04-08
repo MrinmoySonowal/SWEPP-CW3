@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.Collection;
 
 // student-included imports:
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +36,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   /** Internal field only used for transmission purposes;
    * Temporary format for storing food box details (as returned from server). */
   private final class MyMessagingFoodBox {
-    List<BoxItem> contents;
+    List<BoxItem> contents = new ArrayList<>();
     String delivered_by;
     String diet;
     String id;
@@ -44,7 +45,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     /** Creates dictionary of food box items using 'contents' list;
      * Key is item id, Value is food BoxItem ref. */
     private Map<Integer, BoxItem> getContentsDict() {
-      if (this.contents == null) {contents = new ArrayList<>();}  // method returns null
+      //if (this.contents == null) {this.contents = new ArrayList<>();}
       Map<Integer, BoxItem> contentsDict = new HashMap<>();
       for (BoxItem item : this.contents) {
         contentsDict.put(item.getId(), item);
@@ -137,7 +138,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       Map<Integer, MyMessagingFoodBox> specificFoodBox = getDefaultFoodBoxesFromServer(dietaryPreference);
       allDefaultFoodBoxesDict.putAll(specificFoodBox);
     }
-    return allDefaultFoodBoxesDict;
+    return allDefaultFoodBoxesDict;  // ## returns empty hashmap at worst
   }
 
   /**
@@ -147,6 +148,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   // TODO test this private mtd explicitly in ShieldingIndividualClientImpTest
   private Map<Integer, MyMessagingFoodBox> getDefaultFoodBoxesFromServer(String dietaryPreference) {
+    if (!DIET_TYPES.contains(dietaryPreference)) {
+      System.err.printf("%s is an invalid dietary preference", dietaryPreference);
+      return new HashMap<>();  // is empty map
+    }
     Map<Integer, MyMessagingFoodBox> responseBoxesDict = new HashMap<>();
     // setup the response recepient:
     List<MyMessagingFoodBox> responseBoxes = new ArrayList<>();
@@ -180,9 +185,13 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public Collection<String> showFoodBoxes(String dietaryPreference) {
+    if (!DIET_TYPES.contains(dietaryPreference)) {
+      System.err.printf("%s is an invalid dietary preference", dietaryPreference);
+      return Collections.EMPTY_LIST;
+    }
     this.defaultFoodBoxes = getAllDefaultFoodBoxesFromServer();  // updates our cache
     Collection<Integer> boxIdsInt = getDefaultFoodBoxesFromServer(dietaryPreference).keySet();
-    List<String> boxIds = new ArrayList<String>();
+    Collection<String> boxIds = new ArrayList<String>();
     for (int id : boxIdsInt) {
       boxIds.add(String.valueOf(id));
     }
@@ -315,17 +324,16 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     // construct endpoint request
     String request = "/getCaterers";
     // construct receiver structure:
-    List<String> caterers;
+    List<String> caterers = new ArrayList<>();
     try {
       // perform request:
       String response = ClientIO.doGETRequest(endpoint + request);
       // unmarshal response:
       Type listType = new TypeToken<List<String>>() {}.getType();
       caterers = new Gson().fromJson(response, listType);
-      if (caterers == null) throw new NullPointerException("ERROR: Server GET Request failed.");
+      assert(caterers != null) : "ERROR: Server GET Request failed.";
     } catch (Exception e) {
       e.printStackTrace();
-      return null;
     }
     return caterers;
   }
@@ -394,6 +402,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public String getDietaryPreferenceForFoodBox(int foodBoxId) {
+    assert(this.defaultFoodBoxes.containsKey(foodBoxId)) : String.format("%d is an invalid foodBoxId", foodBoxId);
     return this.defaultFoodBoxes.get(foodBoxId).diet;
   }
 
@@ -405,6 +414,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public int getItemsNumberForFoodBox(int foodBoxId) {
+    assert(this.defaultFoodBoxes.containsKey(foodBoxId)) : String.format("%d is an invalid foodBoxId", foodBoxId);
     Map<Integer, MyMessagingFoodBox> foodBoxesDict = getAllDefaultFoodBoxesDict();
     return foodBoxesDict.get(foodBoxId).contents.size();
   }
@@ -417,6 +427,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public Collection<Integer> getItemIdsForFoodBox(int foodboxId) {
+    assert(this.defaultFoodBoxes.containsKey(foodboxId)) : String.format("%d is an invalid foodBoxId", foodboxId);
     Map<Integer, MyMessagingFoodBox> foodBoxesDict = getAllDefaultFoodBoxesDict();
     // find set of itemIds for food box with id == foodboxId:
     return new ArrayList<>(foodBoxesDict.get(foodboxId).getContentsDict().keySet());
@@ -431,6 +442,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public String getItemNameForFoodBox(int itemId, int foodBoxId) {
+    assert(this.defaultFoodBoxes.containsKey(foodBoxId)) : String.format("%d is an invalid foodBoxId", foodBoxId);
     Map<Integer, MyMessagingFoodBox> foodBoxesDict = getAllDefaultFoodBoxesDict();
     return foodBoxesDict.get(foodBoxId).name;
   }
@@ -444,6 +456,8 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public int getItemQuantityForFoodBox(int itemId, int foodBoxId) {
+    assert(this.defaultFoodBoxes.containsKey(foodBoxId)) : String.format("%d is an invalid foodBoxId", foodBoxId);
+    assert(this.defaultFoodBoxes.get(foodBoxId).getContentsDict().containsKey(itemId)) : String.format("%d is an invalid itemId", itemId);
     Map<Integer, MyMessagingFoodBox> foodBoxesDict = getAllDefaultFoodBoxesDict();
     return foodBoxesDict.get(foodBoxId).getContentsDict().get(itemId).getQuantity();
   }
@@ -456,9 +470,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public boolean pickFoodBox(int foodBoxId) {                                       // ### ??? ###
+    if (!this.defaultFoodBoxes.containsKey(foodBoxId)) return false;
     // update local default food boxes 'cache' via server query:
     this.defaultFoodBoxes = getAllDefaultFoodBoxesFromServer();
-    if (!this.defaultFoodBoxes.containsKey(foodBoxId)) return false;
 
     MyMessagingFoodBox chosenFoodBox = this.defaultFoodBoxes.get(foodBoxId);
     this.pickedFoodBox = new FoodBoxOrder();
@@ -480,6 +494,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public boolean changeItemQuantityForPickedFoodBox(int itemId, int quantity) {
     if (this.pickedFoodBox == null) return false;
     if (this.pickedFoodBox.getItemsDict().containsKey(itemId)) return false;
+    if (quantity < 0 && quantity > this.pickedFoodBox.getItemsDict().get(itemId).getQuantity()) return false;
 
     this.pickedFoodBox.getItemsDict().get(itemId).setQuantity(quantity);
     return true;
@@ -508,7 +523,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   @Override
   public String getStatusForOrder(int orderNumber) {
     // return order status as stored on client-side.
-    assert (this.ordersDict.containsKey(orderNumber));
+    assert (this.ordersDict.containsKey(orderNumber)) : "Order not found";
     return this.ordersDict.get(orderNumber).getOrderStatus();
   }
 
@@ -520,7 +535,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public Collection<Integer> getItemIdsForOrder(int orderNumber) {
-    assert (this.ordersDict.containsKey(orderNumber));
+    assert (this.ordersDict.containsKey(orderNumber)) : "Order not found";
     return this.ordersDict.get(orderNumber).getItemsDict().keySet();
   }
 
@@ -533,7 +548,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public String getItemNameForOrder(int itemId, int orderNumber) {
-    assert(this.ordersDict.containsKey(orderNumber));
+    assert(this.ordersDict.containsKey(orderNumber)) : "Order not found";
     Map<Integer, BoxItem> orderItemsDict = this.ordersDict.get(orderNumber).getItemsDict();
     assert(orderItemsDict.containsKey(itemId));
     return orderItemsDict.get(itemId).getName();
@@ -548,9 +563,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public int getItemQuantityForOrder(int itemId, int orderNumber) {
-    assert(this.ordersDict.containsKey(orderNumber));
+    assert(this.ordersDict.containsKey(orderNumber)) : "Order not found";
     Map<Integer, BoxItem> orderItemsDict = this.ordersDict.get(orderNumber).getItemsDict();
-    assert(orderItemsDict.containsKey(itemId));
+    assert(orderItemsDict.containsKey(itemId)) : "Item not found for order";
     return orderItemsDict.get(itemId).getQuantity();
   }
 
@@ -567,6 +582,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     if (!this.ordersDict.containsKey(orderNumber)) return false;
     Map<Integer, BoxItem> orderItemsDict = this.ordersDict.get(orderNumber).getItemsDict();
     if (!orderItemsDict.containsKey(itemId)) return false;
+    if (quantity < 0 && quantity > orderItemsDict.get(itemId).getQuantity()) return false;
 
     orderItemsDict.get(itemId).setQuantity(quantity);
     return true;

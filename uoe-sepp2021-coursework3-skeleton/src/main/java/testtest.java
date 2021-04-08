@@ -119,6 +119,15 @@ public class testtest {
         hashm.put(3,3);
         System.out.println(hashm.size());
         */
+
+        try {
+            System.out.println("try start wololo");
+            assert(1==2);
+            System.out.println("after assert");
+        } catch (Exception e) {
+            System.out.println("catch block reached");
+        }
+
     }
 
 
