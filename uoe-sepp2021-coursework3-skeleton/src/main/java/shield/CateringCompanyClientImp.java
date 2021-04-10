@@ -66,6 +66,7 @@ public class CateringCompanyClientImp implements CateringCompanyClient {
     if(!isValidStatus){
       String errMsg = String.format("%s is not a valid status",status);
       System.err.println(errMsg);
+      return false;
     }
     String request = String.format("/updateOrderStatus?order_id=%s&newStatus=%s",orderNumber,status);
     try {

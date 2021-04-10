@@ -142,7 +142,7 @@ public class ShieldingIndividualClientImpTest {
   @Test
   @DisplayName("Test correct operation of getClosestCateringCompany")
   public void testShieldingIndividualGetClosestCaterer() {
-    client.getClosestCateringCompany();  // TODO
+    //client.getClosestCateringCompany();  // TODO
 
   }
 

@@ -24,6 +24,7 @@ public class CateringCompanyClientImpTest {
 
   private Properties clientProps;
   private CateringCompanyClient client;
+  private ShieldingIndividualClientImp shieldingIndv;
 
   private Properties loadProperties(String propsFilename) {
     ClassLoader loader = Thread.currentThread().getContextClassLoader();
@@ -44,10 +45,12 @@ public class CateringCompanyClientImpTest {
     clientProps = loadProperties(clientPropsFilename);
 
     client = new CateringCompanyClientImp(clientProps.getProperty("endpoint"));
+    shieldingIndv = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
   }
 
 
   @Test
+  @DisplayName("Testing registerCateringCompany method")
   public void testCateringCompanyNewRegistration() {
     Random rand = new Random();
     String name = "Caterer" + rand.nextInt(10000);
@@ -69,16 +72,36 @@ public class CateringCompanyClientImpTest {
     assertEquals(client.getName(), "Caterer1234");
   }
 
-  @Test
+  @RepeatedTest(5)
+  @DisplayName("Testing updateOrderStatus method")
   public void testCateringCompanyUpdateOrderStatus(){
     Random rand = new Random();
     String[] validStatuses= {"packed", "dispatched", "delivered"};
     String status = validStatuses[rand.nextInt(validStatuses.length)];
 
     assertFalse(client.updateOrderStatus(rand.nextInt(), status));
+    assertFalse(client.updateOrderStatus(rand.nextInt(), "Gibberish"));
 
     // TODO to test client.updateOrderStatus returning "True", we need first to place an order via shieldingIndividual,
     //  and then once that order is placed, use that order as a 'planted' order for this test.
+    boolean goodPostcode = false;
+    while (!goodPostcode) {
+      shieldingIndv.registerShieldingIndividual(String.valueOf(rand.nextInt(10000)));
+      // server can randomly not return a postcode cuz indiv is already registered OR produce postcodes of the wrong format
+      if (shieldingIndv.postcode != null && shieldingIndv.postcode.length() == 8) {
+        goodPostcode = true;
+      } else {
+        System.err.println("Server did a poo poo and gave us a postcode with the wrong format / individual already registered.");
+        // TODO consider delete
+      }
+    }
+    client.registerCateringCompany("Cat", "EH16_5AY");
+    shieldingIndv.getClosestCateringCompany();
+    shieldingIndv.pickFoodBox(1);
+    shieldingIndv.placeOrder();
+    int orderID = shieldingIndv.pickedFoodBox.getOrderID();
+    assertTrue(client.updateOrderStatus(orderID, "packed"));
+
 
   }
 }
