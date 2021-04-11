@@ -8,6 +8,9 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -16,7 +19,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -32,7 +34,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   private final String RESP_TRUE = "True";
   private final String RESP_FALSE = "False";
   private List<String> DIET_TYPES = List.of("none", "pollotarian", "vegan");
-  private final String POSTCODE_REGEX = "(eh|EH)[0-9][0-9](_| )[0-9][a-zA-Z][a-zA-Z]";
+  private final String POSTCODE_REGEX = "(eh|EH)([0-9]|)[0-9](_| )[0-9][a-zA-Z][a-zA-Z]";
 
   /** Internal field only used for transmission purposes;
    * Temporary format for storing food box details (as returned from server). */
@@ -85,6 +87,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public boolean registerShieldingIndividual(String CHI) {
+    if (!checkValidCHI(CHI)) return false;
     // constructing endpoint request:
     String request = String.format("/registerShieldingIndividual?CHI=%s", CHI);
     try {
@@ -92,9 +95,8 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       String response = ClientIO.doGETRequest(endpoint + request);
       if (response.equals(ALR_REG)) return true;
       // unmarshall response:
-      List<String> personalDetailsArr = new ArrayList<>();
       Type listType = new TypeToken<List<String>>() {}.getType();
-      personalDetailsArr = new Gson().fromJson(response, listType);
+      List<String> personalDetailsArr = new Gson().fromJson(response, listType);
 
       // TODO ASK in QnA whether to use separate if-statements or use if-elseif-else block.
       if (personalDetailsArr == null) throw new NullPointerException("ERROR: Server GET request failed.");
@@ -108,6 +110,17 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       return true;
     } catch (Exception e) {
       e.printStackTrace();
+      return false;
+    }
+  }
+
+  private boolean checkValidCHI(String CHI) {
+    if (CHI.length() != 10) return false;
+    String firstSix = CHI.substring(0,6);
+    try {
+      LocalDate.parse(firstSix, DateTimeFormatter.ofPattern("ddMMyy"));
+      return true;
+    } catch (DateTimeParseException e) {
       return false;
     }
   }
@@ -364,13 +377,16 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     return -1;  // returns if exception is thrown and caught
   }
 
-  private String formatPostcode(String postcode) {
-    if (postcode.contains(" ")) {
-      String front = postcode.substring(0, 4);
-      String back = postcode.substring(5, 8);
+  protected String formatPostcode(String postcode) {
+    if (postcode.length() == 7) {  // e.g. EH7_6BR
+      String front = postcode.substring(0,2);
+      String num = postcode.substring(2,3);
+      String back = postcode.substring(4,7);
+      return String.format("%s0%s_%s", front.toUpperCase(), num, back.toUpperCase());
+    } else {  // e.g. EH16_5AY
+      String front = postcode.substring(0,4);
+      String back = postcode.substring(5,8);
       return String.format("%s_%s", front.toUpperCase(), back.toUpperCase());
-    } else {
-      return postcode.toUpperCase();
     }
   }
 

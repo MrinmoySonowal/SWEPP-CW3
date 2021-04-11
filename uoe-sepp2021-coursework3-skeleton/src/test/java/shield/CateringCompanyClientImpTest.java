@@ -48,7 +48,6 @@ public class CateringCompanyClientImpTest {
     shieldingIndv = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
   }
 
-
   @Test
   @DisplayName("Testing registerCateringCompany method")
   public void testCateringCompanyNewRegistration() {
@@ -74,7 +73,7 @@ public class CateringCompanyClientImpTest {
 
   @RepeatedTest(5)
   @DisplayName("Testing updateOrderStatus method")
-  public void testCateringCompanyUpdateOrderStatus(){
+  public void testCateringCompanyUpdateOrderStatus() {
     Random rand = new Random();
     String[] validStatuses= {"packed", "dispatched", "delivered"};
     String status = validStatuses[rand.nextInt(validStatuses.length)];
@@ -86,9 +85,11 @@ public class CateringCompanyClientImpTest {
     //  and then once that order is placed, use that order as a 'planted' order for this test.
     boolean goodPostcode = false;
     while (!goodPostcode) {
-      shieldingIndv.registerShieldingIndividual(String.valueOf(rand.nextInt(10000)));
+      String firstFive = String.valueOf(rand.nextInt(99999-10000) + 10000);
+      String lastFive = String.valueOf(rand.nextInt(99999-10000) + 10000);
+      shieldingIndv.registerShieldingIndividual(firstFive + lastFive);
       // server can randomly not return a postcode cuz indiv is already registered OR produce postcodes of the wrong format
-      if (shieldingIndv.postcode != null && shieldingIndv.postcode.length() == 8) {
+      if (shieldingIndv.postcode != null && (shieldingIndv.postcode.length() == 8 || shieldingIndv.postcode.length() == 7)) {
         goodPostcode = true;
       } else {
         System.err.println("Server did a poo poo and gave us a postcode with the wrong format / individual already registered.");
@@ -101,7 +102,13 @@ public class CateringCompanyClientImpTest {
     shieldingIndv.placeOrder();
     int orderID = shieldingIndv.pickedFoodBox.getOrderID();
     assertTrue(client.updateOrderStatus(orderID, "packed"));
+  }
 
-
+  @Test
+  //TODO to be moved to the shielding individual tests
+  public void testPostcodeFormatting() {
+    String iffyPostcode = "eH6 7uu";
+    String goodPostcode = shieldingIndv.formatPostcode(iffyPostcode);
+    System.out.println(goodPostcode);
   }
 }

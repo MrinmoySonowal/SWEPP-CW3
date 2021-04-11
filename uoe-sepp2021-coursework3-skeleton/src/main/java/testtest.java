@@ -7,6 +7,9 @@ import shield.ShieldingIndividualClientImp;
 
 import javax.swing.*;
 import java.lang.reflect.Type;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -120,12 +123,11 @@ public class testtest {
         System.out.println(hashm.size());
         */
 
-        try {
-            System.out.println("try start wololo");
-            assert(1==2);
-            System.out.println("after assert");
-        } catch (Exception e) {
-            System.out.println("catch block reached");
+       try {
+           LocalDate.parse("121212", DateTimeFormatter.ofPattern("ddMMyy"));
+           System.out.println("True");
+       } catch (DateTimeParseException e) {
+           System.out.println("False");
         }
 
     }

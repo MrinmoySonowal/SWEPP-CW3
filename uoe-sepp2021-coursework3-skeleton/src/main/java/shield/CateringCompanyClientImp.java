@@ -18,7 +18,7 @@ public class CateringCompanyClientImp implements CateringCompanyClient {
   private String postCode;
   private boolean isRegistered;
   private final List<String> VALID_STATUSES = Arrays.asList("packed", "dispatched", "delivered");
-  private final String POSTCODE_REGEX = "EH[0-9][0-9]_[0-9][A-Z][A-Z]";
+  private final String POSTCODE_REGEX_STRICT = "EH[0-9][0-9]_[0-9][A-Z][A-Z]";
 
   public CateringCompanyClientImp(String endpoint) {
     this.endpoint = endpoint;
@@ -33,7 +33,7 @@ public class CateringCompanyClientImp implements CateringCompanyClient {
    */
   @Override
   public boolean registerCateringCompany(String name, String postCode) {
-    assert(Pattern.matches(POSTCODE_REGEX, postCode)) : String.format("Postcode %s is the wrong format", postCode);
+    assert(Pattern.matches(POSTCODE_REGEX_STRICT, postCode)) : String.format("Postcode %s is the wrong format", postCode);
     String request = String.format("/registerCateringCompany?business_name=%s&postcode=%s",name,postCode);
     try {
       String response = ClientIO.doGETRequest(this.endpoint + request);
