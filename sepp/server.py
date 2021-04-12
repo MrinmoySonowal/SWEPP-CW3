@@ -49,7 +49,7 @@ class PHS(object):
 
 
 class DeliveryStatus:
-    NONE = 0
+    PLACED = 0
     PACKED = 1
     DISPATCHED = 2
     DELIVERED = 3
@@ -66,8 +66,9 @@ def already_registered_provider(provider_id, postcode):
                 all_providers = f.readlines()
                 all_providers = [item.split('\n')[0] for item in all_providers]
                 for a_provider in all_providers:
-                    if str(provider_id) in a_provider.split(',')[1] and str(postcode) in a_provider.split(',')[2]:
-                        return True
+                    if len(a_provider.split(',')) > 1:
+                        if str(provider_id) in a_provider.split(',')[1] and str(postcode) in a_provider.split(',')[2]:
+                            return True
     return False
 
 def register_new_provider(provider_id, postcode):
@@ -85,8 +86,9 @@ def already_registered_provider_(provider_id, postcode):
                 all_providers = f.readlines()
                 all_providers = [item.split('\n')[0] for item in all_providers]
                 for a_provider in all_providers:
-                    if str(provider_id) in a_provider.split(',')[1] and str(postcode) in a_provider.split(',')[2]:
-                        return True
+                    if len(a_provider.split(',')) > 1:
+                        if str(provider_id) in a_provider.split(',')[1] and str(postcode) in a_provider.split(',')[2]:
+                            return True
     return False
 
 def register_new_provider_(provider_id, postcode):
@@ -150,7 +152,7 @@ def place_order_(items_ordered, individual_id, catering_id):
                 new_record += "," #packed time
                 new_record += "," #dispatched time
                 new_record += "," #delivered time
-                new_record += ","+str(DeliveryStatus.NONE)
+                new_record += ","+str(DeliveryStatus.PLACED)
                 new_record += "\n"
 
                 f.write(new_record)
@@ -167,7 +169,7 @@ def update_order_(items_ordered, order_id):
             with open(orders_file) as f:
                 for an_order in f.readlines():
                     print (an_order.split(',')[0], order_id)
-                    if an_order.split(',')[0] == order_id and an_order.split(',')[-1].rstrip('\n') == str(DeliveryStatus.NONE):
+                    if an_order.split(',')[0] == order_id and an_order.split(',')[-1].rstrip('\n') == str(DeliveryStatus.PLACED):
                         print ('found')
                         found = True
                         new_record = str(order_id)
@@ -181,7 +183,7 @@ def update_order_(items_ordered, order_id):
                         new_record += ","+an_order.split(",")[len(an_order.split(','))-5]
                         new_record += ","+an_order.split(",")[len(an_order.split(','))-4]
                         new_record += ",,"
-                        new_record += ","+str(DeliveryStatus.NONE)
+                        new_record += ","+str(DeliveryStatus.PLACED)
                         new_record += "\n"
 
                         if not trying_to_increase_quantity:
@@ -260,10 +262,11 @@ def catering_is_registered(business_name, business_postcode):
         with open(providers_file) as f:
             for a_catering in f.readlines():
                 a_catering = a_catering.rstrip('\n').split(',')
-                if str(a_catering[1]) == str(business_name) and str(a_catering[2]) == str(business_postcode):
-                    #print (catering_id, a_catering, catering_id==a_catering)
-                    #if str(catering_id) == str(a_catering):
-                    return True
+                if len(a_catering) > 1:
+                    if str(a_catering[1]) == str(business_name) and str(a_catering[2]) == str(business_postcode):
+                        #print (catering_id, a_catering, catering_id==a_catering)
+                        #if str(catering_id) == str(a_catering):
+                        return True
     return False
 
 def get_catering_id(business_name, business_postcode):
@@ -271,8 +274,9 @@ def get_catering_id(business_name, business_postcode):
         with open(providers_file) as f:
             for a_catering in f.readlines():
                 a_catering = a_catering.rstrip('\n').split(',')
-                if str(a_catering[1]) == str(business_name) and str(a_catering[2]) == str(business_postcode):
-                    return a_catering[0]
+                if len(a_catering) > 1:
+                    if str(a_catering[1]) == str(business_name) and str(a_catering[2]) == str(business_postcode):
+                        return a_catering[0]
     return -1
 
 def get_supermarket_id(business_name, business_postcode):
@@ -280,8 +284,9 @@ def get_supermarket_id(business_name, business_postcode):
         with open(providers_file2) as f:
             for a_supermarket in f.readlines():
                 a_supermarket = a_supermarket.rstrip('\n').split(',')
-                if str(a_supermarket[1]) == str(business_name) and str(a_supermarket[2]) == str(business_postcode):
-                    return a_supermarket[0]
+                if len(a_supermarket) > 1:
+                    if str(a_supermarket[1]) == str(business_name) and str(a_supermarket[2]) == str(business_postcode):
+                        return a_supermarket[0]
     return -1
 
 ############ endpoints below
@@ -293,10 +298,10 @@ def register_provider():
         postcode = request.args.get('postcode')
 
         if already_registered_provider(provider_id, postcode):
-            return ('already registered\n')
+            return ('already registered')
         else:
             new_id = register_new_provider(provider_id, postcode)
-            return (str(new_id))
+            return ('registered new') #return (str(new_id))
 
     return 'must specify provider_id'
 
@@ -308,10 +313,10 @@ def registerSupermarket():
         postcode = request.args.get('postcode')
 
         if already_registered_provider_(provider_id, postcode):
-            return ('already registered\n')
+            return ('already registered')
         else:
             new_id = register_new_provider_(provider_id, postcode)
-            return (str(new_id))
+            return ('registered new') #return (str(new_id))
 
     return 'must specify provider_id'
 
@@ -324,7 +329,7 @@ def register_individual():
         postcode, name, surname, phone_number = PHS.verifyShieldingIndividual(individual_id)
 
         if already_registered(individual_id):
-            return ('already registered\n')
+            return ('already registered')
         else:
             register_new_individual(individual_id, postcode, name, surname, phone_number)
             return jsonify([postcode, name, surname, phone_number])
@@ -495,8 +500,8 @@ def distance():
         edinburgh_diameter = 18334 #m
         max_cost = 99*10 + 25*2 + 9
 
-        postcode1 = postcode1.replace('EH', '') #assuming edinburgh
-        postcode2 = postcode2.replace('EH', '') #assuming edinburgh
+        postcode1 = postcode1.replace('EH', '', 1) #assuming edinburgh
+        postcode2 = postcode2.replace('EH', '', 1) #assuming edinburgh
 
         postcode1 = postcode1.split('_')
         postcode1_first_part = postcode1[0]
@@ -554,18 +559,29 @@ def get_catering_company_for_order():
 
     return 'must specify order_id'
 
+def order_exists(order_number):
+    with open(sup_orders_file) as f:
+        for a_line in f.readlines():
+            if len(a_line.split(',')) > 0:
+                if str(a_line.split(',')[0]) == str(order_number):
+                    return True
+    return False
+
 
 @app.route('/recordSupermarketOrder')
 def record_supermarket_order():
     if 'individual_id' in request.args and 'order_number' in request.args and 'supermarket_business_name' in request.args and 'supermarket_postcode' in request.args and individual_is_registered(request.args.get('individual_id')) and get_supermarket_id(request.args.get('supermarket_business_name'), request.args.get('supermarket_postcode')) != -1:
 
+        order_number = request.args['order_number']
         individual_id = request.args['individual_id']
         supermarket_id = get_supermarket_id(request.args.get('supermarket_business_name'), request.args.get('supermarket_postcode'))
 
+        if order_exists(order_number): return 'False'
+
         with lock:
-            num_lines = sum(1 for line in open(sup_orders_file))
-            new_order_id = num_lines+1
-            new_record = str(new_order_id)
+            #num_lines = sum(1 for line in open(sup_orders_file))
+            #new_order_id = num_lines+1
+            new_record = str(order_number) #str(new_order_id)
 
             with open(sup_orders_file, 'a+') as f:
                 new_record += ","+individual_id
@@ -574,11 +590,11 @@ def record_supermarket_order():
                 new_record += "," #packed time
                 new_record += "," #dispatched time
                 new_record += "," #delivered time
-                new_record += ","+str(DeliveryStatus.NONE)
+                new_record += ","+str(DeliveryStatus.PLACED)
                 new_record += "\n"
                 f.write(new_record)
 
-            return str(new_order_id)
+            return 'True' #str(new_order_id)
 
     return 'require individual_id, order_number, supermarket_business_name, and supermarket_postcode. The individual must be registered and the supermarket must be registered'
 
