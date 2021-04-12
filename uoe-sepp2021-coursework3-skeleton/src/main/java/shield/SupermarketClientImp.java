@@ -17,10 +17,11 @@ public class SupermarketClientImp implements SupermarketClient {
   private boolean isRegistered;
   private final String RESPONSE_TRUE = "True" ;
   private final String RESPONSE_FALSE = "False";
+  private final String RESPONSE_ERROR = "require individual_id, order_number, supermarket_business_name, and supermarket_postcode. The individual must be registered and the supermarket must be registered";
   private final String REG_NEW = "registered new";
   private final String ALR_REG = "already registered";
   private final List<String> VALID_STATUSES = Arrays.asList("packed", "dispatched", "delivered");
-  private final String POSTCODE_REGEX = "EH[0-9][0-9]_[0-9][A-Z][A-Z]";
+  private final String POSTCODE_REGEX_STRICT = "EH[0-9][0-9]_[0-9][A-Z][A-Z]";
 
   public SupermarketClientImp(String endpoint) {
     this.endpoint = endpoint;
@@ -35,7 +36,7 @@ public class SupermarketClientImp implements SupermarketClient {
    */
   @Override
   public boolean registerSupermarket(String name, String postCode) {
-    assert(Pattern.matches(POSTCODE_REGEX, postCode)) : String.format("Postcode %s is the wrong format", postCode);
+    //assert(Pattern.matches(POSTCODE_REGEX_STRICT, postCode)) : String.format("Postcode %s is the wrong format", postCode);
     // construct the endpoint request
     String request = String.format("/registerSupermarket?business_name=%s&postcode=%s", name, postCode);
     try {
@@ -77,7 +78,8 @@ public class SupermarketClientImp implements SupermarketClient {
                                    CHI, orderNumber, this.name, this.postcode);
     try {
       String response = ClientIO.doGETRequest(this.endpoint + request);
-      boolean isValidResponse = response.equals(RESPONSE_TRUE)||response.equals(RESPONSE_FALSE);
+      System.out.println(response);
+      boolean isValidResponse = response.equals(RESPONSE_TRUE)||response.equals(RESPONSE_ERROR);
       if(!isValidResponse){
         String errMsg = String.format("WARNING: Unexpected response for %s", request);
         System.err.println(errMsg);
@@ -104,6 +106,7 @@ public class SupermarketClientImp implements SupermarketClient {
     if(!isValidStatus){
       String errMsg = String.format("%s is not a valid status",status);
       System.err.println(errMsg);
+      return false;
     }
     String request = String.format("/updateSupermarketOrderStatus?order_id=%s&newStatus=%s",orderNumber,status);
     try {
