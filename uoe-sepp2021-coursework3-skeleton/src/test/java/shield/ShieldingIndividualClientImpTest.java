@@ -6,6 +6,7 @@ package shield;
 
 import org.junit.jupiter.api.*;
 
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -27,6 +28,7 @@ public class ShieldingIndividualClientImpTest {
 
   private Properties clientProps;
   private ShieldingIndividualClient client;
+  private String testCHI;
 
   private Properties loadProperties(String propsFilename) {
     ClassLoader loader = Thread.currentThread().getContextClassLoader();
@@ -48,41 +50,47 @@ public class ShieldingIndividualClientImpTest {
 
     client = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
 
+    Random rand = new Random();
+    String dateTime = DateTimeFormatter.ofPattern("ddMMyy").format(LocalDateTime.now());
+    String lastFour = String.valueOf(rand.nextInt(9999 - 1000) + 1000);
+    this.testCHI = dateTime + lastFour;
   }
-
 
   @Test
   @DisplayName("Testing correct value for registerShieldingIndividual")
   public void testShieldingIndividualNewRegistration() {
     Random rand = new Random();
-    String chi = String.valueOf(rand.nextInt(10000));
-    //System.out.println(client.showFoodBoxes("none"));
-    //System.out.println(client.getCateringCompanies());
 
     // Test functionality for new registration:
-    assertTrue(client.registerShieldingIndividual(chi), "Working method (new registration) must return true.");
-    assertTrue(client.isRegistered(), "Field must be true once registered.");
+    assertTrue(client.registerShieldingIndividual(this.testCHI),
+            "Working method (new registration) must return true.");
+    assertTrue(client.isRegistered(),
+            "Field must be true once registered.");
     // TODO clarify: how to get indiv details from server if alr registered (and using new client obj),
     //  ANS: write as part of report as a limitation
-    assertEquals(client.getCHI(), chi, "Client-stored CHI must be the same as inputted CHI.");
+    assertEquals(client.getCHI(), this.testCHI, "Client-stored CHI must be the same as inputted CHI.");
     // TODO how to test functions that are not part of the java interfaces?
     //  ANS: dont need to test the private mtds unless they're complex enough in which test them separately
 
     // Test functionality for "already registered":
-    assertTrue(client.registerShieldingIndividual(chi), "Working method (already registered) must return true.");
-    assertTrue(client.isRegistered(), "Field must be true once registered.");
-    assertEquals(client.getCHI(), chi, "Client-stored CHI must be the same as inputted CHI.");
+    assertTrue(client.registerShieldingIndividual(this.testCHI),
+            "Working method (already registered) must return true.");
+    assertTrue(client.isRegistered(),
+            "Field must be true once registered.");
+    assertEquals(client.getCHI(), this.testCHI,
+            "Client-stored CHI must be the same as inputted CHI.");
     //client.pickFoodBox(1);
     //client.getClosestCateringCompany();
     // TODO clarify postcode formatting error from server function (e.g. eh0111),
     //  ANS: should be of correct format, but need to do our own checks
     //client.placeOrder();
-
   }
 
   @Test
   @DisplayName("Test correct operation of showFoodBoxes")
   public void testShieldingIndividualShowFoodBodes() {
+    client.registerShieldingIndividual(this.testCHI);
+
     // we check values against those in food_boxes.txt
     assertEquals(client.showFoodBoxes("none"), Arrays.asList("1","3","4"),
             "Working method should return IDs for boxes with diet = 'none'");
@@ -91,9 +99,8 @@ public class ShieldingIndividualClientImpTest {
     assertEquals(client.showFoodBoxes("vegan"), Collections.singletonList("5"),
             "Working method should return IDs for boxes with diet = 'vegan'");
 
-    //assertEquals(client.showFoodBoxes(" "), Collections.EMPTY_LIST);
-    // TODO the above test returns false cuz server will see it as 'no dietary restriction';
-    //  this server behaviour was not specified in the documentation.
+    assertNotEquals(client.showFoodBoxes(" "), Collections.EMPTY_LIST,
+            "'No dietary preference' should be an allowed diet");
 
     assertEquals(client.showFoodBoxes("Gibberish"), Collections.EMPTY_LIST,
             "Working method should return no IDs since 'Gibberish' is not a valid diet type");
@@ -102,6 +109,8 @@ public class ShieldingIndividualClientImpTest {
   @Test
   @DisplayName("Test correct operation of pickFoodBox")
   public void testShieldingIndividualPickFoodBox() {
+
+    client.registerShieldingIndividual(this.testCHI);
     assertTrue(client.pickFoodBox(1), "Working method should return True");
     assertTrue(client.pickFoodBox(2), "Working method should return True");
     assertTrue(client.pickFoodBox(3), "Working method should return True");

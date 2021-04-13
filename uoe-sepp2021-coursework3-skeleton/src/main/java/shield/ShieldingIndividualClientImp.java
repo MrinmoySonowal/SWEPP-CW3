@@ -33,7 +33,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   private final String ORDER_NOT_FOUND = "-1";
   private final String RESP_TRUE = "True";
   private final String RESP_FALSE = "False";
-  private List<String> DIET_TYPES = List.of("none", "pollotarian", "vegan");
+  private List<String> DIET_TYPES = List.of("none", "pollotarian", "vegan", " ");
   private final String POSTCODE_REGEX = "(eh|EH)([0-9]|)[0-9](_| )[0-9][a-zA-Z][a-zA-Z]";
 
   /** Internal field only used for transmission purposes;
@@ -152,7 +152,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    *
    * @return Map of all default food boxes as found on server
    */
-  private Map<Integer, MyMessagingFoodBox> getAllDefaultFoodBoxesFromServer() {
+  protected Map<Integer, MyMessagingFoodBox> getAllDefaultFoodBoxesFromServer() {
     Map<Integer, MyMessagingFoodBox> allDefaultFoodBoxesDict = new HashMap<>();
     for (String dietaryPreference : DIET_TYPES) {
       Map<Integer, MyMessagingFoodBox> specificFoodBox = getDefaultFoodBoxesFromServer(dietaryPreference);
@@ -167,7 +167,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    * @return Map of default food boxes as found on server for dietary preference.
    */
   // TODO test this private mtd explicitly in ShieldingIndividualClientImpTest
-  private Map<Integer, MyMessagingFoodBox> getDefaultFoodBoxesFromServer(String dietaryPreference) {
+  protected Map<Integer, MyMessagingFoodBox> getDefaultFoodBoxesFromServer(String dietaryPreference) {
     if (!DIET_TYPES.contains(dietaryPreference)) {
       System.err.printf("%s is an invalid dietary preference", dietaryPreference);
       return new HashMap<>();  // is empty map
