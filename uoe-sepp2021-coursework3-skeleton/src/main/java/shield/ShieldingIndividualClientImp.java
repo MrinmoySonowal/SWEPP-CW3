@@ -114,6 +114,12 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     }
   }
 
+  /**
+   * Check whether CHI is valid format
+   *
+   * @param CHI
+   * @return true or false
+   */
   private boolean checkValidCHI(String CHI) {
     if (CHI.length() != 10) return false;
     String firstSix = CHI.substring(0,6);
@@ -199,6 +205,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public Collection<String> showFoodBoxes(String dietaryPreference) {
+    assert(this.isRegistered()):"Individual must be registered first";
     if (!DIET_TYPES.contains(dietaryPreference)) {
       System.err.printf("%s is an invalid dietary preference", dietaryPreference);
       return Collections.EMPTY_LIST;
@@ -220,6 +227,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   // **UPDATE2** REMOVED PARAMETER
   @Override
   public boolean placeOrder() { // will not use LocalDateTime
+    assert(this.isRegistered()):"Individual must be registered first";
     if(this.pickedFoodBox == null) return false;
     String request = String.format("/placeOrder?individual_id=%s" +
                                    "&catering_business_name=%s" +
@@ -250,6 +258,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public boolean editOrder(int orderNumber) {
+    assert(this.isRegistered()):"Individual must be registered first";
     // check if orderNumber exists:
     if (!this.ordersDict.containsKey(orderNumber)) return false;
     boolean isOrderPlaced = this.ordersDict.get(orderNumber).getOrderStatus().equals(ORDER_PLACED);
@@ -282,6 +291,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public boolean cancelOrder(int orderNumber) {
+    assert(this.isRegistered()):"Individual must be registered first";
     if (!this.ordersDict.containsKey(orderNumber)) return false;
     String request = String.format("/cancelOrder?order_id=%s", orderNumber);
     try {
@@ -305,6 +315,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public boolean requestOrderStatus(int orderID) {
+    assert(this.isRegistered()):"Individual must be registered first";
     if(!this.ordersDict.containsKey(orderID)) return false;
     // constructing endpoint request:
     String request = String.format("/requestStatus?order_id=%s", orderID);
@@ -335,6 +346,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public Collection<String> getCateringCompanies() {
+    assert(this.isRegistered()):"Individual must be registered first";
     // construct endpoint request
     String request = "/getCaterers";
     // construct receiver structure:
@@ -377,6 +389,12 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     return -1;  // returns if exception is thrown and caught
   }
 
+  /**
+   * Formats postcode to the form akin to "EH16_5AY"
+   *
+   * @param postcode
+   * @return formatted postcode
+   */
   protected String formatPostcode(String postcode) {
     if (postcode.length() == 7) {  // e.g. EH7_6BR
       String front = postcode.substring(0,2);
@@ -497,6 +515,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public boolean pickFoodBox(int foodBoxId) {                                       // ### ??? ###
+    assert(this.isRegistered()):"Individual must be registered first";
     // update local default food boxes 'cache' via server query:
     this.defaultFoodBoxes = getAllDefaultFoodBoxesFromServer();
     if (!this.defaultFoodBoxes.containsKey(foodBoxId)) return false;
@@ -519,6 +538,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public boolean changeItemQuantityForPickedFoodBox(int itemId, int quantity) {
+    assert(this.isRegistered()):"Individual must be registered first";
     if (this.pickedFoodBox == null) return false;
     if (this.pickedFoodBox.getItemsDict().containsKey(itemId)) return false;
     if (quantity < 0 && quantity > this.pickedFoodBox.getItemsDict().get(itemId).getQuantity()) return false;
@@ -538,6 +558,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public Collection<Integer> getOrderNumbers() {
+    assert(this.isRegistered()):"Individual must be registered first";
     return new ArrayList<>(this.ordersDict.keySet());
   }
 
@@ -549,6 +570,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public String getStatusForOrder(int orderNumber) {
+    assert(this.isRegistered()):"Individual must be registered first";
     // return order status as stored on client-side.
     assert (this.ordersDict.containsKey(orderNumber)) : "Order not found";
     return this.ordersDict.get(orderNumber).getOrderStatus();
@@ -562,6 +584,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public Collection<Integer> getItemIdsForOrder(int orderNumber) {
+    assert(this.isRegistered()):"Individual must be registered first";
     assert (this.ordersDict.containsKey(orderNumber)) : "Order not found";
     return this.ordersDict.get(orderNumber).getItemsDict().keySet();
   }
@@ -575,6 +598,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public String getItemNameForOrder(int itemId, int orderNumber) {
+    assert(this.isRegistered()):"Individual must be registered first";
     assert(this.ordersDict.containsKey(orderNumber)) : "Order not found";
     Map<Integer, BoxItem> orderItemsDict = this.ordersDict.get(orderNumber).getItemsDict();
     assert(orderItemsDict.containsKey(itemId));
@@ -590,6 +614,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public int getItemQuantityForOrder(int itemId, int orderNumber) {
+    assert(this.isRegistered()):"Individual must be registered first";
     assert(this.ordersDict.containsKey(orderNumber)) : "Order not found";
     Map<Integer, BoxItem> orderItemsDict = this.ordersDict.get(orderNumber).getItemsDict();
     assert(orderItemsDict.containsKey(itemId)) : "Item not found for order";
@@ -606,6 +631,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public boolean setItemQuantityForOrder(int itemId, int orderNumber, int quantity) {
+    assert(this.isRegistered()):"Individual must be registered first";
     if (!this.ordersDict.containsKey(orderNumber)) return false;
     Map<Integer, BoxItem> orderItemsDict = this.ordersDict.get(orderNumber).getItemsDict();
     if (!orderItemsDict.containsKey(itemId)) return false;

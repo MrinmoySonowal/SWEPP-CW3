@@ -36,7 +36,7 @@ public class SupermarketClientImp implements SupermarketClient {
    */
   @Override
   public boolean registerSupermarket(String name, String postCode) {
-    //assert(Pattern.matches(POSTCODE_REGEX_STRICT, postCode)) : String.format("Postcode %s is the wrong format", postCode);
+    assert(Pattern.matches(POSTCODE_REGEX_STRICT, postCode)) : String.format("Postcode %s is the wrong format", postCode);
     // construct the endpoint request
     String request = String.format("/registerSupermarket?business_name=%s&postcode=%s", name, postCode);
     try {
