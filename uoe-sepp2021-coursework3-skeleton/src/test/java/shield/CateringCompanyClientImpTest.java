@@ -46,7 +46,7 @@ public class CateringCompanyClientImpTest {
     clientProps = loadProperties(clientPropsFilename);
 
     client = new CateringCompanyClientImp(clientProps.getProperty("endpoint"));
-    shieldingIndv = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
+    //shieldingIndv = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
   }
 
   @Test
@@ -103,13 +103,5 @@ public class CateringCompanyClientImpTest {
     int orderID = shieldingIndv.pickedFoodBox.getOrderID();
     assertTrue(client.updateOrderStatus(orderID, "packed"), "Method should return true for correct operation");
     assertFalse(client.updateOrderStatus(orderID, "Gibberish"), "Method should return false for invalid status");
-  }
-
-  @Test
-  //TODO to be moved to the shielding individual tests
-  public void testPostcodeFormatting() {
-    String iffyPostcode = "eH6 7uu";
-    String goodPostcode = shieldingIndv.formatPostcode(iffyPostcode);
-    System.out.println(goodPostcode);
   }
 }

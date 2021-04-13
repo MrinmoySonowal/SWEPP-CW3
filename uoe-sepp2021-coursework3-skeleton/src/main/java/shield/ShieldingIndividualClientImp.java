@@ -69,7 +69,6 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   private String nearestCateringPostCode;
   /** Stores FoodBoxOrder obj of the user-picked food box. Is picked according to food box id. */
   protected FoodBoxOrder pickedFoodBox;
-  // TODO make the below attributes private
   private String forename;
   private String surname;
   private String phoneNum;

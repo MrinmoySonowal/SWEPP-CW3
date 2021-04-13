@@ -47,7 +47,6 @@ public class ShieldingIndividualClientImpTest {
   @BeforeEach
   public void setup() {
     clientProps = loadProperties(clientPropsFilename);
-
     client = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
 
     Random rand = new Random();
@@ -146,6 +145,17 @@ public class ShieldingIndividualClientImpTest {
     expectedMessage = String.format("postcode1 (%s) is of wrong format", "eh165ay");
     actualMessage = badPostcodeErr2.getMessage();
     assertEquals(expectedMessage, actualMessage, "Working method should return True");
+  }
+
+  @Test
+  //TODO to be moved to the shielding individual tests
+  public void testPostcodeFormatting() {
+    String iffyPostcode = "eH6 7uu";
+    //String goodPostcode = client.formatPostcode(iffyPostcode);
+
+
+    //String goodPostcode = client. //client.formatPostcode(iffyPostcode);
+    //System.out.println(goodPostcode);
   }
 
   @Test
