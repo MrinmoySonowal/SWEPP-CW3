@@ -42,7 +42,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     List<BoxItem> contents = new ArrayList<>();
     String delivered_by;
     String diet;
-    String id;
+    Integer id;
     String name;
 
     /** Creates dictionary of food box items using 'contents' list;
@@ -119,7 +119,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    * @param CHI
    * @return true or false
    */
-  private boolean checkValidCHI(String CHI) {
+  protected boolean checkValidCHI(String CHI) {
     if (CHI.length() != 10) return false;
     String firstSix = CHI.substring(0,6);
     try {
@@ -179,14 +179,14 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     try {
       // perform request:
       String response = ClientIO.doGETRequest(endpoint + request);
+      //System.out.println(response);
       // unmarshal response:
       Type listType = new TypeToken<List<MyMessagingFoodBox>>() {}.getType();
       responseBoxes = new Gson().fromJson(response, listType);
-
       if (responseBoxes == null) throw new NullPointerException("ERROR: Server GET Request failed.");
 
       for (MyMessagingFoodBox b : responseBoxes) {
-        responseBoxesDict.put(Integer.parseInt(b.id), b);
+        responseBoxesDict.put(b.id, b);
       }
     } catch (Exception e) {
       e.printStackTrace();
@@ -235,7 +235,8 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     List<BoxItem> boxItemsList = new ArrayList<>(this.pickedFoodBox.getItemsDict().values());
     Gson gson = new Gson();
     String items = gson.toJson(boxItemsList);
-    String data = String.format("{\"contents\":%s}%n", items);
+    String data = String.format("{\"contents\":%s}", items);
+    System.out.println(data);
     // form order data using the pickedFoodBox order
     try {
       String orderID = ClientIO.doPOSTRequest(endpoint + request, data);
@@ -267,7 +268,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     List<BoxItem> boxItemsList = new ArrayList<>(this.ordersDict.get(orderNumber).getItemsDict().values());
     Gson gson = new Gson();
     String items = gson.toJson(boxItemsList);
-    String data = String.format("{\"contents\":%s}%n", items);
+    String data = String.format("{\"contents\":%s}", items);
     try {
       String response = ClientIO.doPOSTRequest(endpoint + request, data);
       boolean isValidResponse = response.equals(RESP_TRUE) || response.equals(RESP_FALSE);

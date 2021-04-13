@@ -46,7 +46,7 @@ public class CateringCompanyClientImpTest {
     clientProps = loadProperties(clientPropsFilename);
 
     client = new CateringCompanyClientImp(clientProps.getProperty("endpoint"));
-    //shieldingIndv = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
+    shieldingIndv = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
   }
 
   @Test
