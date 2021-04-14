@@ -7,8 +7,6 @@ package shield;
 import com.google.gson.Gson;
 import org.junit.jupiter.api.*;
 
-import java.io.IOException;
-import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,11 +27,14 @@ public class ShieldingIndividualClientImpTest {
   private final static String clientPropsFilename = "client.cfg";
 
   private Properties clientProps;
-  private ShieldingIndividualClient client;
+  //private ShieldingIndividualClient client;
   private ShieldingIndividualClientImp clientImp;
   private CateringCompanyClientImp cateringImp;
-  private String validTestCHI;
+  private String validRngCHI;
   private final String POSTCODE_REGEX_STRICT = "EH[0-9][0-9]_[0-9][A-Z][A-Z]";
+  String testCHI = "1210782341";
+  String testCaterName = "nearestCaterer";
+  String testCaterPostcode = "EH55_2BT";
 
   private Properties loadProperties(String propsFilename) {
     ClassLoader loader = Thread.currentThread().getContextClassLoader();
@@ -52,14 +53,28 @@ public class ShieldingIndividualClientImpTest {
   @BeforeEach
   public void setup() {
     clientProps = loadProperties(clientPropsFilename);
-    client = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
     clientImp = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
     cateringImp = new CateringCompanyClientImp(clientProps.getProperty("endpoint"));
+
+    String requestRegUser = String.format("/registerShieldingIndividual?CHI=%s", this.testCHI);
+    try {
+      ClientIO.doGETRequest(clientProps.getProperty("endpoint") + requestRegUser);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+
+    String requestRegCaterer = String.format("/registerCateringCompany?business_name=%s&postcode=%s",
+            this.testCaterName,this.testCaterPostcode);
+    try {
+      ClientIO.doGETRequest(clientProps.getProperty("endpoint") + requestRegCaterer);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
 
     Random rand = new Random();
     String dateTime = DateTimeFormatter.ofPattern("ddMMyy").format(LocalDateTime.now());
     String lastFour = String.valueOf(rand.nextInt(9999 - 1000) + 1000);
-    this.validTestCHI = dateTime + lastFour;
+    this.validRngCHI = dateTime + lastFour;
   }
 
   // TODO (BIG): replace all unrelated methods in UnitTests with setters (public)
@@ -67,31 +82,30 @@ public class ShieldingIndividualClientImpTest {
   @Test
   @DisplayName("Testing correct value for registerShieldingIndividual")
   public void testShieldingIndividualNewRegistration() {
-    Random rand = new Random();
-
     // Test functionality for new registration:
-    assertTrue(client.registerShieldingIndividual(this.validTestCHI),
+    assertTrue(clientImp.registerShieldingIndividual(this.validRngCHI),
             "Working method (new registration) must return true.");
-    assertTrue(client.isRegistered(),
+    assertTrue(clientImp.isRegistered(),
             "Field must be true once registered.");
+    assertEquals(clientImp.getCHI(), this.validRngCHI,
+            "Client-stored CHI must be the same as inputted CHI.");
+
+    // Test functionality for "already registered":
+    assertTrue(clientImp.registerShieldingIndividual(this.validRngCHI),
+            "Working method (already registered) must return true.");
+    assertTrue(clientImp.isRegistered(),
+            "Field must be true once registered.");
+    assertEquals(clientImp.getCHI(), this.validRngCHI,
+            "Client-stored CHI must be the same as inputted CHI.");
+
     // TODO clarify: how to get indiv details from server if alr registered (and using new client obj),
     //  ANS: write as part of report as a limitation
-    assertEquals(client.getCHI(), this.validTestCHI, "Client-stored CHI must be the same as inputted CHI.");
+
     // TODO how to test functions that are not part of the java interfaces?
     //  ANS: dont need to test the private mtds unless they're complex enough in which test them separately
 
-    // Test functionality for "already registered":
-    assertTrue(client.registerShieldingIndividual(this.validTestCHI),
-            "Working method (already registered) must return true.");
-    assertTrue(client.isRegistered(),
-            "Field must be true once registered.");
-    assertEquals(client.getCHI(), this.validTestCHI,
-            "Client-stored CHI must be the same as inputted CHI.");
-    //client.pickFoodBox(1);
-    //client.getClosestCateringCompany();
     // TODO clarify postcode formatting error from server function (e.g. eh0111),
     //  ANS: should be of correct format, but need to do our own checks
-    //client.placeOrder();
   }
 
   @Test
@@ -99,13 +113,13 @@ public class ShieldingIndividualClientImpTest {
   public void testShieldingIndividualCheckValidCHI() {
     String badCHI = "3402661234";  // 34 Feb does not exist
     assertFalse(clientImp.checkValidCHI(badCHI), "Working method should return false for invalid CHI");
-    assertTrue(clientImp.checkValidCHI(this.validTestCHI),"Working method should return true for valid CHI");
+    assertTrue(clientImp.checkValidCHI(this.validRngCHI),"Working method should return true for valid CHI");
   }
 
   @Test
   @DisplayName("Test helper wrapper method getAllDefaultFoodBoxesFromServer")
   public void testShieldingIndividualGetAllDefaultFoodBoxesFromServer() {
-    assertEquals(clientImp.getDefaultFoodBoxesFromServer("Gibberish"), Collections.EMPTY_MAP,
+    assertNotEquals(clientImp.getAllDefaultFoodBoxesFromServer(), Collections.EMPTY_MAP,
             "Working method should return empty hashmap for invalid dietary preference");
 
     String request = String.format("/showFoodBox?orderOption=catering&dietaryPreference=%s", " ");
@@ -127,91 +141,97 @@ public class ShieldingIndividualClientImpTest {
     assertEquals(clientImp.getDefaultFoodBoxesFromServer("Gibberish"), Collections.EMPTY_MAP,
             "Working method should return empty hashmap for invalid dietary preference");
 
-    // Test for dietary preference = none
-    String requestNone = String.format("/showFoodBox?orderOption=catering&dietaryPreference=%s", "none");
-    String response = new String();
-    try {
-      response = ClientIO.doGETRequest(clientProps.getProperty("endpoint") + requestNone);
-    } catch (Exception e) {
-      e.printStackTrace();
+    List<String> DIET_TYPES = List.of("none", "pollotarian", "vegan", " ");
+    for (String dietType : DIET_TYPES) {
+      String request = String.format("/showFoodBox?orderOption=catering&dietaryPreference=%s", dietType);
+      String response = "";
+      try {
+        response = ClientIO.doGETRequest(clientProps.getProperty("endpoint") + request);
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+      Gson gson = new Gson();
+      String items = gson.toJson(clientImp.getDefaultFoodBoxesFromServer(dietType).values());
+      assertEquals(response, items,
+              "Working method should return matching content as naked HTTP request");
     }
-    Gson gson = new Gson();
-    String items = gson.toJson(clientImp.getDefaultFoodBoxesFromServer("none").values());
-    assertEquals(response, items,
-            "Working method should return matching content as naked HTTP request");
-    // TODO: repeat test for all other dietary preferences
   }
 
   @Test
   @DisplayName("Test correct operation of showFoodBoxes")
-  public void testShieldingIndividualShowFoodBodes() {
-    client.registerShieldingIndividual(this.validTestCHI);
+  public void testShieldingIndividualShowFoodBoxes() {
+    clientImp.setRegistered(true);
 
     // we check values against those in food_boxes.txt
     assertEquals(client.showFoodBoxes("none"), Arrays.asList("1","3","4"),
             "Working method should return IDs for boxes with diet = 'none'");
     assertEquals(client.showFoodBoxes("pollotarian"), Collections.singletonList("2"),
             "Working method should return IDs for boxes with diet = 'pollotarian'");
-    assertEquals(client.showFoodBoxes("vegan"), Collections.singletonList("5"),
+    assertEquals(clientImp.showFoodBoxes("vegan"), Collections.singletonList("5"),
             "Working method should return IDs for boxes with diet = 'vegan'");
 
-    assertNotEquals(client.showFoodBoxes(" "), Collections.EMPTY_LIST,
+    assertNotEquals(clientImp.showFoodBoxes(" "), Collections.EMPTY_LIST,
             "'No dietary preference' should be an allowed diet");
 
-    assertEquals(client.showFoodBoxes("Gibberish"), Collections.EMPTY_LIST,
+    assertEquals(clientImp.showFoodBoxes("Gibberish"), Collections.EMPTY_LIST,
             "Working method should return no IDs since 'Gibberish' is not a valid diet type");
   }
 
   @Test
   @DisplayName("Test correct operation of placeOrder")
   public void testShieldingIndividualPlaceOrder() {
-    // TODO replace unrelated methods with setters (public setters)
-    client.registerShieldingIndividual(this.validTestCHI);
-    cateringImp.registerCateringCompany("testCaterer", "EH25_7TX");
-    client.getClosestCateringCompany();
-    assertFalse(client.placeOrder(),"Working method should return false; food box not picked");
-    client.pickFoodBox(1);  //pick one of 5 available default food boxes
-    assertTrue(client.placeOrder(), "Working method should return true");
+    clientImp.setChiNum(this.testCHI);
+    clientImp.setRegistered(true);
+
+    clientImp.setNearestCatererName(this.testCaterName);
+    clientImp.setNearestCateringPostCode(this.testCaterPostcode);
+
+    FoodBoxOrder foodBox = new FoodBoxOrder();
+    foodBox.setOrderID(1);
+    clientImp.setPickedFoodBox(foodBox);
+
+    assertTrue(clientImp.placeOrder(), "Working method should return true");
   }
 
   @Test
   @DisplayName("Test correct operation of pickFoodBox")
   public void testShieldingIndividualPickFoodBox() {
 
-    client.registerShieldingIndividual(this.validTestCHI);
-    assertTrue(client.pickFoodBox(1), "Working method should return True");
-    assertTrue(client.pickFoodBox(2), "Working method should return True");
-    assertTrue(client.pickFoodBox(3), "Working method should return True");
-    assertTrue(client.pickFoodBox(4), "Working method should return True");
-    assertTrue(client.pickFoodBox(5), "Working method should return True");
+    clientImp.setRegistered(true);
 
-    assertFalse(client.pickFoodBox(19),
+    assertTrue(clientImp.pickFoodBox(1), "Working method should return True");
+    assertTrue(clientImp.pickFoodBox(2), "Working method should return True");
+    assertTrue(clientImp.pickFoodBox(3), "Working method should return True");
+    assertTrue(clientImp.pickFoodBox(4), "Working method should return True");
+    assertTrue(clientImp.pickFoodBox(5), "Working method should return True");
+
+    assertFalse(clientImp.pickFoodBox(19),
             "Working method should return False since there is no food box in food_boxes.txt of ID = 19");
   }
 
   @Test
   @DisplayName("Test correct operation of getDistance")
   public void testShieldingIndividualGetDistance() {
-    assertTrue(client.getDistance("EH16_5AY", "EH56_9UG") >= 0, "Working method should return True");
+    assertTrue(clientImp.getDistance("EH16_5AY", "EH56_9UG") >= 0, "Working method should return True");
 
     AssertionError badPostcodeErr0 = assertThrows(AssertionError.class, () -> {
-      client.getDistance("eh165ay", "EH56_9UG");
+      clientImp.getDistance("eh165ay", "EH56_9UG");
     });
-    String expectedMessage = String.format("postcode1 (%s) is of wrong format", "eh165ay");
+    String expectedMessage = String.format("postcode (%s) is of wrong format", "eh165ay");
     String actualMessage = badPostcodeErr0.getMessage();
     assertEquals(expectedMessage, actualMessage, "Working method should return True");
 
     AssertionError badPostcodeErr1 = assertThrows(AssertionError.class, () -> {
-      client.getDistance("EH16_5AY", "eh569ug");
+      clientImp.getDistance("EH16_5AY", "eh569ug");
     });
-    expectedMessage = String.format("postcode2 (%s) is of wrong format", "eh569ug");
+    expectedMessage = String.format("postcode (%s) is of wrong format", "eh569ug");
     actualMessage = badPostcodeErr1.getMessage();
     assertEquals(expectedMessage, actualMessage, "Working method should return True");
 
     AssertionError badPostcodeErr2 = assertThrows(AssertionError.class, () -> {
       client.getDistance("eh165ay", "eh569ug");
     });
-    expectedMessage = String.format("postcode1 (%s) is of wrong format", "eh165ay");
+    expectedMessage = String.format("postcode (%s) is of wrong format", "eh165ay");
     actualMessage = badPostcodeErr2.getMessage();
     assertEquals(expectedMessage, actualMessage, "Working method should return True");
   }
