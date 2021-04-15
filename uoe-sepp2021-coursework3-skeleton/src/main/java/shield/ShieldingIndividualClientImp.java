@@ -57,10 +57,16 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public void setPostcode(String postcode) {
     this.postcode = postcode;
   }
+  public void setOrdersDict(Map<Integer, FoodBoxOrder> ordersDict) {
+    this.ordersDict = ordersDict;
+  }
+  public void setDefaultFoodBoxes(Map<Integer, MyMessagingFoodBox> defaultFoodBoxes) {
+    this.defaultFoodBoxes = defaultFoodBoxes;
+  }
 
   /** Internal field only used for transmission purposes;
    * Temporary format for storing food box details (as returned from server). */
-  private final class MyMessagingFoodBox {
+  private class MyMessagingFoodBox {
     List<BoxItem> contents = new ArrayList<>();
     String delivered_by;
     String diet;
@@ -194,7 +200,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   // TODO test this private mtd explicitly in ShieldingIndividualClientImpTest
   protected Map<Integer, MyMessagingFoodBox> getDefaultFoodBoxesFromServer(String dietaryPreference) {
-    if (!DIET_TYPES.contains(dietaryPreference)) {
+    if (!(DIET_TYPES.contains(dietaryPreference) || dietaryPreference.equals(NO_DIET))) {
       System.err.printf("%s is an invalid dietary preference", dietaryPreference);
       return new HashMap<>();  // is empty map
     }
@@ -232,7 +238,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   @Override
   public Collection<String> showFoodBoxes(String dietaryPreference) {
     assert(this.isRegistered()):"Individual must be registered first";
-    if (!DIET_TYPES.contains(dietaryPreference)) {
+    if (!(DIET_TYPES.contains(dietaryPreference) || dietaryPreference.equals(NO_DIET))) {
       System.err.printf("%s is an invalid dietary preference", dietaryPreference);
       return Collections.EMPTY_LIST;
     }
@@ -290,7 +296,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     if (!this.ordersDict.containsKey(orderNumber)) return false;
     boolean isOrderPlaced = this.ordersDict.get(orderNumber).getOrderStatus().equals(ORDER_PLACED);
     boolean isOrderPacked = this.ordersDict.get(orderNumber).getOrderStatus().equals(ORDER_PACKED);
-    if (!isOrderPlaced || !isOrderPacked) return false;
+    if (!isOrderPlaced && !isOrderPacked) return false;
     String request = String.format("/editOrder?order_id=%s", orderNumber);
     List<BoxItem> boxItemsList = new ArrayList<>(this.ordersDict.get(orderNumber).getItemsDict().values());
     Gson gson = new Gson();
@@ -566,8 +572,8 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public boolean changeItemQuantityForPickedFoodBox(int itemId, int quantity) {
     assert(this.isRegistered()):"Individual must be registered first";
     if (this.pickedFoodBox == null) return false;
-    if (this.pickedFoodBox.getItemsDict().containsKey(itemId)) return false;
-    if (quantity < 0 && quantity > this.pickedFoodBox.getItemsDict().get(itemId).getQuantity()) return false;
+    if (!this.pickedFoodBox.getItemsDict().containsKey(itemId)) return false;
+    if (quantity < 0 || quantity > this.pickedFoodBox.getItemsDict().get(itemId).getQuantity()) return false;
 
     this.pickedFoodBox.getItemsDict().get(itemId).setQuantity(quantity);
     return true;

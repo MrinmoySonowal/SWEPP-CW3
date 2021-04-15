@@ -5,9 +5,12 @@
 package shield;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import org.junit.jupiter.api.*;
 
+import java.lang.reflect.Type;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Properties;
@@ -35,6 +38,7 @@ public class ShieldingIndividualClientImpTest {
   String testCHI = "1210782341";
   String testCaterName = "nearestCaterer";
   String testCaterPostcode = "EH55_2BT";
+  int testOrderId;
 
   private Properties loadProperties(String propsFilename) {
     ClassLoader loader = Thread.currentThread().getContextClassLoader();
@@ -67,6 +71,17 @@ public class ShieldingIndividualClientImpTest {
             this.testCaterName,this.testCaterPostcode);
     try {
       ClientIO.doGETRequest(clientProps.getProperty("endpoint") + requestRegCaterer);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+
+    String requestPlaceOrder = String.format("/placeOrder?individual_id=%s" +
+                    "&catering_business_name=%s" +
+                    "&catering_postcode=%s",
+            this.testCHI, this.testCaterName, this.testCaterPostcode);
+    String data = "{\"contents\":[]}";
+    try {
+      this.testOrderId = Integer.parseInt(ClientIO.doPOSTRequest(clientProps.getProperty("endpoint") + requestPlaceOrder, data));
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -196,7 +211,6 @@ public class ShieldingIndividualClientImpTest {
   @Test
   @DisplayName("Test correct operation of pickFoodBox")
   public void testShieldingIndividualPickFoodBox() {
-
     clientImp.setRegistered(true);
 
     assertTrue(clientImp.pickFoodBox(1), "Working method should return True");
@@ -259,6 +273,42 @@ public class ShieldingIndividualClientImpTest {
   public void testShieldingIndividualGetClosestCaterer() {
     //client.getClosestCateringCompany();  // TODO
 
+  }
+
+  @Test
+  @DisplayName("Test correct operation of editOrder")
+  public void testShieldingIndividualEditOrder() {
+    // this method is only called after order is editted via other methods
+    AssertionError notRegisteredErr = assertThrows(AssertionError.class, () -> {
+      clientImp.editOrder(this.testOrderId);
+    });
+    String expectedMessage = "Individual must be registered first";
+    String actualMessage = notRegisteredErr.getMessage();
+    assertEquals(expectedMessage, actualMessage,
+            "Method should not allow unregistered users to order");
+
+    clientImp.setRegistered(true);
+    FoodBoxOrder order = new FoodBoxOrder();
+    order.setOrderID(this.testOrderId);
+    Map<Integer, FoodBoxOrder> testMap = new HashMap<>();
+    testMap.put(this.testOrderId,order);
+    clientImp.setOrdersDict(testMap);
+
+    String ORDER_NOT_FOUND = "-1";
+    order.setOrderStatus(ORDER_NOT_FOUND);
+    assertFalse(clientImp.editOrder(this.testOrderId),
+            "Working method should not allow changing of 'not-found' orders");
+
+    for (int i = 2; i < 4+1; i++) {
+      // iterates through Dispatched, Delivered, Cancelled
+      order.setOrderStatus(String.valueOf(i));
+      assertFalse(clientImp.editOrder(this.testOrderId),
+              "Working method should not allow order changes unless status is Placed or Packed");
+    }
+
+    String ORDER_PLACED = "0";
+    order.setOrderStatus(ORDER_PLACED);  // set order placed
+    assertTrue(clientImp.editOrder(this.testOrderId));
   }
 
 
