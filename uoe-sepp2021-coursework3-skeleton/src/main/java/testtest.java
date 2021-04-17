@@ -105,8 +105,16 @@ public class testtest {
 
         boolean b3 = Pattern.matches("EH[0-9][0-9]_[0-9][A-Z][A-Z]","Eh16_5001");
         System.out.println(b3);
-
-
+        int testOrderId = 19;
+        FoodBoxOrder order = new FoodBoxOrder();
+        order.setOrderID(testOrderId);
+        String ORDER_PLACED = "0";
+        order.setOrderStatus(ORDER_PLACED);
+        Map<Integer, FoodBoxOrder> ordersDict = new HashMap<>();
+        ordersDict.put(testOrderId, order);
+        System.out.println(ordersDict.keySet());
+        ordersDict.remove(testOrderId);
+        System.out.println(ordersDict.keySet());
         /*
         List<String> testList = new ArrayList<>();
         //System.out.println("sdf");
@@ -122,13 +130,14 @@ public class testtest {
         hashm.put(3,3);
         System.out.println(hashm.size());
         */
-
+       /*
        try {
            LocalDate.parse("121212", DateTimeFormatter.ofPattern("ddMMyy"));
            System.out.println("True");
        } catch (DateTimeParseException e) {
            System.out.println("False");
         }
+        */
 
     }
 

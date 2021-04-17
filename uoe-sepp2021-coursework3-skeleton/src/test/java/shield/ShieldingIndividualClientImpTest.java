@@ -13,6 +13,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.time.LocalDateTime;
 import java.io.InputStream;
@@ -138,7 +141,7 @@ public class ShieldingIndividualClientImpTest {
             "Working method should return empty hashmap for invalid dietary preference");
 
     String request = String.format("/showFoodBox?orderOption=catering&dietaryPreference=%s", " ");
-    String response = new String();
+    String response = "";
     try {
       response = ClientIO.doGETRequest(clientProps.getProperty("endpoint") + request);
     } catch (Exception e) {
@@ -178,9 +181,9 @@ public class ShieldingIndividualClientImpTest {
     clientImp.setRegistered(true);
 
     // we check values against those in food_boxes.txt
-    assertEquals(client.showFoodBoxes("none"), Arrays.asList("1","3","4"),
+    assertEquals(clientImp.showFoodBoxes("none"), Arrays.asList("1","3","4"),
             "Working method should return IDs for boxes with diet = 'none'");
-    assertEquals(client.showFoodBoxes("pollotarian"), Collections.singletonList("2"),
+    assertEquals(clientImp.showFoodBoxes("pollotarian"), Collections.singletonList("2"),
             "Working method should return IDs for boxes with diet = 'pollotarian'");
     assertEquals(clientImp.showFoodBoxes("vegan"), Collections.singletonList("5"),
             "Working method should return IDs for boxes with diet = 'vegan'");
@@ -243,7 +246,7 @@ public class ShieldingIndividualClientImpTest {
     assertEquals(expectedMessage, actualMessage, "Working method should return True");
 
     AssertionError badPostcodeErr2 = assertThrows(AssertionError.class, () -> {
-      client.getDistance("eh165ay", "eh569ug");
+      clientImp.getDistance("eh165ay", "eh569ug");
     });
     expectedMessage = String.format("postcode (%s) is of wrong format", "eh165ay");
     actualMessage = badPostcodeErr2.getMessage();
@@ -251,28 +254,41 @@ public class ShieldingIndividualClientImpTest {
   }
 
   @Test
-  //TODO to be moved to the shielding individual tests
-  public void testPostcodeFormatting() {
-    String iffyPostcode = "eH6 7uu";
-    String goodPostcode = clientImp.formatPostcode(iffyPostcode);
-    assertTrue(Pattern.matches(POSTCODE_REGEX_STRICT, goodPostcode),
-            "Successfully formatted postcode should match strict postcode format");
+  @DisplayName("Test correct operation of formatPostode (for acceptable postcode formats)")
+  public void testGoodPostcodeFormatting() {
+    List<String> IFFY_POSTCODES = List.of("eH6 7uu", "Eh61 7uu", "Eh6_7uu", "eH61_7uu");
+    for (String iffyPostcode : IFFY_POSTCODES) {
+      String goodPostcode = clientImp.formatPostcode(iffyPostcode);
+      assertTrue(Pattern.matches(POSTCODE_REGEX_STRICT, goodPostcode),
+              "Successfully formatted postcode should match strict postcode format");
+    }
+  }
 
-    String iffyPostcode1 = "eH61 7uu";
-    String goodPostcode1 = clientImp.formatPostcode(iffyPostcode1);
-    assertTrue(Pattern.matches(POSTCODE_REGEX_STRICT, goodPostcode1),
-            "Successfully formatted postcode should match strict postcode format");
-
-    // TODO: test the following possibilities too
-    String iffyPostcode2 = "eH6_7uu";
-    String iffyPostcode3 = "eH61_7uu";
+  @Test
+  @DisplayName("Test correct operation of formatPostcode (for unacceptable postcode formats)")
+  public void testBadPostcodeFormatting() {
+    List<String> IFFY_POSTCODES = List.of("TH6 7uu", "fH6_27uu", "eH623_7uu", "eH61_71uu");
+    for (String iffyPostcode : IFFY_POSTCODES) {
+      AssertionError badPostcodeErr = assertThrows(AssertionError.class, () -> {
+        clientImp.formatPostcode(iffyPostcode);
+      });
+      String expectedMessage = String.format("postcode (%s) is of wrong format", iffyPostcode);
+      String actualMessage = badPostcodeErr.getMessage();
+      assertEquals(expectedMessage, actualMessage,
+              "Invalid postcodes should fail assertion in formatPostcode");
+    }
   }
 
   @Test
   @DisplayName("Test correct operation of getClosestCateringCompany")
   public void testShieldingIndividualGetClosestCaterer() {
-    //client.getClosestCateringCompany();  // TODO
-
+    List<String> testCatList = List.of("0,testCat1,EH15_1QW", "1,testCat2,EH01_2BT", "2,testCat3,EH12_7FF");
+    clientImp.setRegistered(true);
+    clientImp.setPostcode("EH16_5AU");
+    clientImp.setCateringCompaniesArr(testCatList);
+    String expectedCaterer = "testCat1";
+    assertEquals(clientImp.getClosestCateringCompany(), expectedCaterer,
+            "Working method should return closest postcode");
   }
 
   @Test
@@ -312,6 +328,107 @@ public class ShieldingIndividualClientImpTest {
   }
 
 
+  @Test
+  @DisplayName("Test correct operation of cancelOrder")
+  public void testShieldingIndividualCancelOrder(){
+    //TODO
+    AssertionError notRegisteredErr = assertThrows(AssertionError.class, () -> {
+      clientImp.cancelOrder(this.testOrderId);
+    });
+    String expectedMessage = "Individual must be registered first";
+    String actualMessage = notRegisteredErr.getMessage();
+    assertEquals(expectedMessage, actualMessage,
+            "Method should not allow unregistered users to cancel order");
 
+    clientImp.setRegistered(true);
+    FoodBoxOrder order = new FoodBoxOrder();
+    order.setOrderID(this.testOrderId);
+    Map<Integer, FoodBoxOrder> testMap = new HashMap<>();
+    testMap.put(this.testOrderId,order);
+    clientImp.setOrdersDict(testMap);
 
+    String ORDER_NOT_FOUND = "-1";
+    order.setOrderStatus(ORDER_NOT_FOUND);
+    assertFalse(clientImp.editOrder(this.testOrderId),
+            "Working method should not allow cancelling of 'not-found' orders");
+
+    for (int i = 2; i < 4+1; i++) {
+      // iterates through Dispatched, Delivered, Cancelled
+      order.setOrderStatus(String.valueOf(i));
+      assertFalse(clientImp.cancelOrder(this.testOrderId),
+              "Working method should not allow order changes unless status is Placed or Packed");
+    }
+
+    String ORDER_PLACED = "0";
+    order.setOrderStatus(ORDER_PLACED);  // set order placed
+    assertTrue(clientImp.cancelOrder(this.testOrderId),
+            "Working method should return true");
+  }
+
+  @Test
+  @DisplayName("Test correct operation of requestOrderStatus")
+  public void testShieldingIndividualRequestOrderStatus() {
+    AssertionError notRegisteredErr = assertThrows(AssertionError.class, () -> {
+      clientImp.requestOrderStatus(this.testOrderId);
+    });
+    String expectedMessage = "Individual must be registered first";
+    String actualMessage = notRegisteredErr.getMessage();
+    assertEquals(expectedMessage, actualMessage,
+            "Method should not allow unregistered users to request for order status");
+
+    clientImp.setRegistered(true);
+    FoodBoxOrder order = new FoodBoxOrder();
+    order.setOrderID(this.testOrderId);
+    Map<Integer, FoodBoxOrder> testMap = new HashMap<>();
+
+    assertFalse(clientImp.requestOrderStatus(this.testOrderId),
+            "Method should not allow requests for order statuses of non-existent orders (client-side)");
+
+    testMap.put(this.testOrderId,order);
+    clientImp.setOrdersDict(testMap);
+    assertTrue(clientImp.requestOrderStatus(this.testOrderId));
+  }
+
+  @Test
+  @DisplayName("Test correct operation of getFoodBoxNumber")
+  public void testShieldingIndividualGetFoodBoxNumber(){
+    assertEquals(clientImp.getFoodBoxNumber(), 5, "Working method should return 5 (int)");
+    // There are 5 default food boxes in the default server file food_boxes.txt
+  }
+
+  @Test
+  @DisplayName("Test correct operation of getDietaryPreferenceForFoodBox")
+  public void testShieldingIndividualGetDietaryPreferenceForFoodBox() {
+    // TODO: review how to make test better (without using external methods)
+    clientImp.setDefaultFoodBoxes(clientImp.getAllDefaultFoodBoxesFromServer());  // method already verified from before
+    assertEquals(clientImp.getDietaryPreferenceForFoodBox(1), "none");
+    assertEquals(clientImp.getDietaryPreferenceForFoodBox(2), "pollotarian");
+    assertEquals(clientImp.getDietaryPreferenceForFoodBox(3), "none");
+    assertEquals(clientImp.getDietaryPreferenceForFoodBox(4), "none");
+    assertEquals(clientImp.getDietaryPreferenceForFoodBox(5), "vegan");
+  }
+
+  @Test
+  @DisplayName("Test correct operation of changeItemQuantityForPickedFoodBox")
+  public void testShieldingIndvChangeItemQuantityForPickedFoodBox(){
+    AssertionError notRegisteredErr = assertThrows(AssertionError.class, () -> {
+      clientImp.changeItemQuantityForPickedFoodBox(1,1);
+    });
+    String expectedMessage = "Individual must be registered first";
+    String actualMessage = notRegisteredErr.getMessage();
+    assertEquals(expectedMessage, actualMessage,
+            "Method should not allow unregistered users to cancel order");
+
+    clientImp.setRegistered(true);
+    clientImp.pickFoodBox(1);
+    //quantity = 2 for item 2 for foodBoxId 1 in food_boxes.txt
+    assertFalse(clientImp.changeItemQuantityForPickedFoodBox(2,3),
+            "Working method should return false when qty is greater than existing qty");
+
+    assertFalse(clientImp.changeItemQuantityForPickedFoodBox(2,-1),
+            "Working method should return false when quantity is less than 0");
+
+    assertTrue(clientImp.changeItemQuantityForPickedFoodBox(2,1),
+            "Working method should return true for correct quantity");
+  }
 }

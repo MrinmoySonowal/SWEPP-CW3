@@ -33,7 +33,8 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   private final String ORDER_NOT_FOUND = "-1";
   private final String RESP_TRUE = "True";
   private final String RESP_FALSE = "False";
-  private List<String> DIET_TYPES = List.of("none", "pollotarian", "vegan", " ");
+  private List<String> DIET_TYPES = List.of("none", "pollotarian", "vegan");
+  private final String NO_DIET = " ";
   private final String POSTCODE_REGEX = "(e|E)(h|H)([0-9]|)[0-9](_| )[0-9][a-zA-Z][a-zA-Z]";
 
   public void setRegistered(boolean registered) {
@@ -326,6 +327,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public boolean cancelOrder(int orderNumber) {
     assert(this.isRegistered()):"Individual must be registered first";
     if (!this.ordersDict.containsKey(orderNumber)) return false;
+    boolean isOrderDispatched = this.ordersDict.get(orderNumber).getOrderStatus().equals(ORDER_DISPATCHED);
+    boolean isOrderDelivered = this.ordersDict.get(orderNumber).getOrderStatus().equals(ORDER_DELIVERED);
+    boolean isOrderCancelled = this.ordersDict.get(orderNumber).getOrderStatus().equals(ORDER_CANCELLED);
+    if(isOrderDispatched || isOrderDelivered || isOrderCancelled) return false;
     String request = String.format("/cancelOrder?order_id=%s", orderNumber);
     try {
       String response = ClientIO.doGETRequest(endpoint + request);
