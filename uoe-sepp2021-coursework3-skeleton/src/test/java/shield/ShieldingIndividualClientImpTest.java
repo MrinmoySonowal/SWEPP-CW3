@@ -8,6 +8,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import org.junit.jupiter.api.*;
 
+import javax.print.attribute.HashPrintJobAttributeSet;
 import java.lang.reflect.Type;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -410,7 +411,7 @@ public class ShieldingIndividualClientImpTest {
 
   @Test
   @DisplayName("Test correct operation of changeItemQuantityForPickedFoodBox")
-  public void testShieldingIndvChangeItemQuantityForPickedFoodBox(){
+  public void testShieldingIndvChangeItemQuantityForPickedFoodBox() {
     AssertionError notRegisteredErr = assertThrows(AssertionError.class, () -> {
       clientImp.changeItemQuantityForPickedFoodBox(1,1);
     });
@@ -432,4 +433,191 @@ public class ShieldingIndividualClientImpTest {
     assertTrue(clientImp.changeItemQuantityForPickedFoodBox(2,1),
             "Working method should return true for correct quantity");
   }
+
+  @Test
+  @DisplayName("Test correct operation of getItemsNumberForFoodBox")
+  public void testShieldingIndvGetItemNumbersForFoodBox() {
+    AssertionError fbNotFoundErr = assertThrows(AssertionError.class, () -> {
+      clientImp.getItemsNumberForFoodBox(1);
+    });
+    String expectedMessage = "1 is an invalid foodBoxId";
+    String actualMessage = fbNotFoundErr.getMessage();
+    assertEquals(expectedMessage, actualMessage,
+            "Method should not allow unregistered users to cancel order");
+
+    clientImp.setDefaultFoodBoxes(clientImp.getAllDefaultFoodBoxesFromServer());
+    assertEquals(clientImp.getItemsNumberForFoodBox(1), 3);
+    assertEquals(clientImp.getItemsNumberForFoodBox(2), 3);
+    assertEquals(clientImp.getItemsNumberForFoodBox(3), 3);
+    assertEquals(clientImp.getItemsNumberForFoodBox(4), 4);
+    assertEquals(clientImp.getItemsNumberForFoodBox(5), 3);
+  }
+
+  @Test
+  @DisplayName("Test correct operation of getItemIdsForFoodBox")
+  public void testShieldingIndvGetItemIdsForFoodBox() {
+    AssertionError fbNotFoundErr = assertThrows(AssertionError.class, () -> {
+      clientImp.getItemsNumberForFoodBox(1);
+    });
+    String expectedMessage = "1 is an invalid foodBoxId";
+    String actualMessage = fbNotFoundErr.getMessage();
+    assertEquals(expectedMessage, actualMessage,
+            "Method should not allow unregistered users to cancel order");
+
+    clientImp.setDefaultFoodBoxes(clientImp.getAllDefaultFoodBoxesFromServer());
+    List<Integer> fb1Items = List.of(1,2,6);
+    assertEquals(clientImp.getItemIdsForFoodBox(1), fb1Items);
+    List<Integer> fb2Items = List.of(1,3,7);
+    assertEquals(clientImp.getItemIdsForFoodBox(2), fb2Items);
+    List<Integer> fb3Items = List.of(3,4,8);
+    assertEquals(clientImp.getItemIdsForFoodBox(3), fb3Items);
+    List<Integer> fb4Items = List.of(8,9,11,13);
+    assertEquals(clientImp.getItemIdsForFoodBox(4), fb4Items);
+    List<Integer> fb5Items = List.of(9,11,12);
+    assertEquals(clientImp.getItemIdsForFoodBox(5), fb5Items);
+//    List<List<Integer>> allItems = List.of(fb1Items, fb2Items);
+//    for(listItems: allItems)
+  }
+
+  @Test
+  @DisplayName("Test correct operation of getItemNameForFoodBox")
+  public void testShieldingIndividualGetItemNameForFoodBox() {
+    AssertionError fbNotFoundErr = assertThrows(AssertionError.class, () -> {
+      clientImp.getItemNameForFoodBox(1,1);
+    });
+    String expectedMessage = "1 is an invalid foodBoxId";
+    String actualMessage = fbNotFoundErr.getMessage();
+    assertEquals(expectedMessage, actualMessage,
+            "Method should not allow unregistered users to cancel order");
+
+    clientImp.setDefaultFoodBoxes(clientImp.getAllDefaultFoodBoxesFromServer());
+    assertEquals(clientImp.getItemNameForFoodBox(1, 1), "cucumbers");
+    assertEquals(clientImp.getItemNameForFoodBox(3, 2), "onions");
+    assertEquals(clientImp.getItemNameForFoodBox(4, 3), "carrots");
+    assertEquals(clientImp.getItemNameForFoodBox(8, 4), "bacon");
+    assertEquals(clientImp.getItemNameForFoodBox(12, 5), "mango");
+  }
+
+  @Test
+  @DisplayName("Test correct operation of getItemQuantityForFoodBox")
+  public void testShieldingIndividualGetItemQuantityForFoodBox() {
+    AssertionError fbNotFoundErr = assertThrows(AssertionError.class, () -> {
+      clientImp.getItemQuantityForFoodBox(1,1);
+    });
+    String expectedMessage = "1 is an invalid foodBoxId";
+    String actualMessage = fbNotFoundErr.getMessage();
+    assertEquals(expectedMessage, actualMessage,
+            "Method should not allow unregistered users to cancel order");
+
+    clientImp.setDefaultFoodBoxes(clientImp.getAllDefaultFoodBoxesFromServer());
+
+    AssertionError itemNotFoundErr = assertThrows(AssertionError.class, () -> {
+      clientImp.getItemQuantityForFoodBox(13,1);
+    });
+    String expectedMessage1 = "13 is an invalid itemId";
+    String actualMessage1 = itemNotFoundErr.getMessage();
+    assertEquals(expectedMessage1, actualMessage1,
+            "Method should not allow non-existent querying for non-existent items");
+
+    assertEquals(clientImp.getItemQuantityForFoodBox(1, 1), 1);
+    assertEquals(clientImp.getItemQuantityForFoodBox(3, 2), 1);
+    assertEquals(clientImp.getItemQuantityForFoodBox(4, 3), 2);
+    assertEquals(clientImp.getItemQuantityForFoodBox(8, 4), 1);
+    assertEquals(clientImp.getItemQuantityForFoodBox(12, 5), 1);
+  }
+
+  @Test
+  @DisplayName("Test correct operation of getOrderNumbers")
+  public void testShieldingIndividualGetOrderNumbers() {
+    AssertionError notRegisteredErr = assertThrows(AssertionError.class, () -> {
+      clientImp.getOrderNumbers();
+    });
+    String expectedMessage = "Individual must be registered first";
+    String actualMessage = notRegisteredErr.getMessage();
+    assertEquals(expectedMessage, actualMessage,
+            "Method should not allow unregistered users to get order numbers");
+
+    clientImp.setRegistered(true);
+    Map<Integer, FoodBoxOrder> ordersDict = new HashMap<>();
+    clientImp.setOrdersDict(ordersDict);
+    assertEquals(clientImp.getOrderNumbers(), Collections.EMPTY_LIST);
+
+    FoodBoxOrder order = new FoodBoxOrder();
+    order.setOrderID(this.testOrderId);
+    ordersDict.put(this.testOrderId, order);
+    assertEquals(clientImp.getOrderNumbers(), List.of(this.testOrderId));
+  }
+
+  @Test
+  @DisplayName("Test correct operation of getStatusForOrder")
+  public void testShieldingIndividualGetStatusForOrder() {
+    AssertionError notRegisteredErr = assertThrows(AssertionError.class, () -> {
+      clientImp.getStatusForOrder(this.testOrderId);
+    });
+    String expectedMessage = "Individual must be registered first";
+    String actualMessage = notRegisteredErr.getMessage();
+    assertEquals(expectedMessage, actualMessage,
+            "Method should not allow unregistered users to get order status");
+
+    clientImp.setRegistered(true);
+    Map<Integer, FoodBoxOrder> ordersDict = new HashMap<>();
+    clientImp.setOrdersDict(ordersDict);
+
+    AssertionError orderNotFoundErr = assertThrows(AssertionError.class, () -> {
+      clientImp.getStatusForOrder(this.testOrderId);
+    });
+    String expectedMessage1 = "Order not found";
+    String actualMessage1 = orderNotFoundErr.getMessage();
+    assertEquals(expectedMessage1, actualMessage1,
+            "Method should not allow querying for statuses of non-existent orders");
+
+    FoodBoxOrder order = new FoodBoxOrder();
+    order.setOrderID(this.testOrderId);
+    order.setOrderStatus("0");
+    ordersDict.put(this.testOrderId, order);
+    assertEquals(clientImp.getStatusForOrder(this.testOrderId), "0");
+
+  }
+
+  @Test
+  @DisplayName("Test correct operation of getItemIdsForOrder")
+  public void testShieldingIndividualGetItemIdsForOrder(){
+    AssertionError fbNotFoundErr = assertThrows(AssertionError.class, () -> {
+      clientImp.getItemIdsForOrder(this.testOrderId);
+    });
+    String expectedMessage = "Individual must be registered first";
+    String actualMessage = fbNotFoundErr.getMessage();
+    assertEquals(expectedMessage, actualMessage,
+            "Method should not allow unregistered users to get item ids for order");
+
+    clientImp.setRegistered(true);
+    Map<Integer, FoodBoxOrder> ordersDict = new HashMap<>();
+    clientImp.setOrdersDict(ordersDict);
+
+    AssertionError orderNotFoundErr = assertThrows(AssertionError.class, () -> {
+      clientImp.getItemIdsForOrder(this.testOrderId);
+    });
+    String expectedMessage1 = "Order not found";
+    String actualMessage1 = orderNotFoundErr.getMessage();
+    assertEquals(expectedMessage1, actualMessage1,
+            "Method should not allow querying for itemIds of non-existent orders");
+
+    FoodBoxOrder order = new FoodBoxOrder();
+    order.setOrderID(this.testOrderId);
+    ordersDict.put(this.testOrderId, order);
+
+    Map<Integer, BoxItem> itemsDict = new HashMap<>();
+    order.setItemsDict(itemsDict);
+    assertEquals(clientImp.getItemIdsForOrder(this.testOrderId), Collections.EMPTY_LIST );
+
+    BoxItem item1 = new BoxItem();
+    itemsDict.put(1,item1);
+    BoxItem item2 = new BoxItem();
+    itemsDict.put(2,item2);
+    assertEquals(clientImp.getItemIdsForOrder(this.testOrderId), List.of(1,2));
+  }
+
+
+
+
 }

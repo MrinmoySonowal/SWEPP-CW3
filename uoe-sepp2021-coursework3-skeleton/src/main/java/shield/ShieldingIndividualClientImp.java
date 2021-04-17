@@ -64,6 +64,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public void setDefaultFoodBoxes(Map<Integer, MyMessagingFoodBox> defaultFoodBoxes) {
     this.defaultFoodBoxes = defaultFoodBoxes;
   }
+  public Map<Integer, MyMessagingFoodBox> getterDefaultFoodBoxes() {
+    return defaultFoodBoxes;
+  }
 
   /** Internal field only used for transmission purposes;
    * Temporary format for storing food box details (as returned from server). */
@@ -526,7 +529,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public String getItemNameForFoodBox(int itemId, int foodBoxId) {
     assert(this.defaultFoodBoxes.containsKey(foodBoxId)) : String.format("%d is an invalid foodBoxId", foodBoxId);
     Map<Integer, MyMessagingFoodBox> foodBoxesDict = getAllDefaultFoodBoxes();
-    return foodBoxesDict.get(foodBoxId).name;
+    return foodBoxesDict.get(foodBoxId).getContentsDict().get(itemId).getName();
   }
 
   /**
@@ -623,7 +626,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public Collection<Integer> getItemIdsForOrder(int orderNumber) {
     assert(this.isRegistered()):"Individual must be registered first";
     assert (this.ordersDict.containsKey(orderNumber)) : "Order not found";
-    return this.ordersDict.get(orderNumber).getItemsDict().keySet();
+    return new ArrayList<Integer>(this.ordersDict.get(orderNumber).getItemsDict().keySet());
   }
 
   /**
