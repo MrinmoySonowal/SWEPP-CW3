@@ -420,6 +420,7 @@ public class ShieldingIndividualClientImpTest {
             "Method should not allow unregistered users to cancel order");
 
     clientImp.setRegistered(true);
+    // TODO Change to Food Box Order
     clientImp.pickFoodBox(1);
     //quantity = 2 for item 2 for foodBoxId 1 in food_boxes.txt
     assertFalse(clientImp.changeItemQuantityForPickedFoodBox(2,3),
