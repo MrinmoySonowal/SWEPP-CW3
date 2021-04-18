@@ -617,7 +617,135 @@ public class ShieldingIndividualClientImpTest {
     assertEquals(clientImp.getItemIdsForOrder(this.testOrderId), List.of(1,2));
   }
 
+  @Test
+  @DisplayName("Test correct operation of getItemNameForOrder")
+  public void testShieldingIndividualGetItemNameForOrder() {
+    AssertionError notRegisteredErr = assertThrows(AssertionError.class, () -> {
+      clientImp.getItemNameForOrder(1, this.testOrderId);
+    });
+    String expectedMessage = "Individual must be registered first";
+    String actualMessage = notRegisteredErr.getMessage();
+    assertEquals(expectedMessage, actualMessage,
+            "Method should not allow unregistered users to get item name");
 
+    clientImp.setRegistered(true);
+    Map<Integer, FoodBoxOrder> ordersDict = new HashMap<>();
+    clientImp.setOrdersDict(ordersDict);
+
+    AssertionError orderNotFoundErr = assertThrows(AssertionError.class, () -> {
+      clientImp.getItemNameForOrder(1, this.testOrderId);
+    });
+    String expectedMessage1 = "Order not found";
+    String actualMessage1 = orderNotFoundErr.getMessage();
+    assertEquals(expectedMessage1, actualMessage1,
+            "Method should not allow querying for statuses of non-existent orders");
+
+    FoodBoxOrder order = new FoodBoxOrder();
+    Map<Integer, BoxItem> itemsDict = new HashMap<>();
+    BoxItem item1 = new BoxItem();
+    item1.setName("carrots");
+    itemsDict.put(1,item1);
+    BoxItem item2 = new BoxItem();
+    item2.setName("banana");
+    itemsDict.put(2,item2);
+
+    AssertionError itemNotFoundErr = assertThrows(AssertionError.class, () -> {
+      clientImp.getItemNameForOrder(1, this.testOrderId);
+    });
+    String expectedMessage2 = "Order not found";
+    String actualMessage2 = itemNotFoundErr.getMessage();
+    assertEquals(expectedMessage2, actualMessage2,
+            "Method should not allow querying for statuses of non-existent items");
+
+    order.setItemsDict(itemsDict);
+    ordersDict.put(this.testOrderId, order);
+    assertEquals(clientImp.getItemNameForOrder(1, this.testOrderId), "carrots");
+    assertEquals(clientImp.getItemNameForOrder(2, this.testOrderId), "banana");
+  }
+
+  @Test
+  @DisplayName("Test correct operation of getItemQuantityForOrder")
+  public void testShieldingIndividualGetItemQuantityForOrder() {
+    AssertionError notRegisteredErr = assertThrows(AssertionError.class, () -> {
+      clientImp.getItemQuantityForOrder(1, this.testOrderId);
+    });
+    String expectedMessage = "Individual must be registered first";
+    String actualMessage = notRegisteredErr.getMessage();
+    assertEquals(expectedMessage, actualMessage,
+            "Method should not allow unregistered users to get item name");
+
+    clientImp.setRegistered(true);
+    Map<Integer, FoodBoxOrder> ordersDict = new HashMap<>();
+    clientImp.setOrdersDict(ordersDict);
+
+    AssertionError orderNotFoundErr = assertThrows(AssertionError.class, () -> {
+      clientImp.getItemQuantityForOrder(1, this.testOrderId);
+    });
+    String expectedMessage1 = "Order not found";
+    String actualMessage1 = orderNotFoundErr.getMessage();
+    assertEquals(expectedMessage1, actualMessage1,
+            "Method should not allow querying for statuses of non-existent orders");
+
+    FoodBoxOrder order = new FoodBoxOrder();
+    Map<Integer, BoxItem> itemsDict = new HashMap<>();
+    BoxItem item1 = new BoxItem();
+    item1.setQuantity(1);
+    itemsDict.put(1,item1);
+    BoxItem item2 = new BoxItem();
+    item2.setQuantity(2);
+    itemsDict.put(2,item2);
+    order.setItemsDict(itemsDict);
+    ordersDict.put(this.testOrderId, order);
+
+    AssertionError itemNotFoundErr = assertThrows(AssertionError.class, () -> {
+      clientImp.getItemQuantityForOrder(3, this.testOrderId);
+    });
+    String expectedMessage2 = "Item not found for order";
+    String actualMessage2 = itemNotFoundErr.getMessage();
+    assertEquals(expectedMessage2, actualMessage2,
+            "Method should not allow querying for statuses of non-existent items");
+
+    assertEquals(clientImp.getItemQuantityForOrder(1, this.testOrderId), 1);
+    assertEquals(clientImp.getItemQuantityForOrder(2, this.testOrderId), 2);
+  }
+
+  @Test
+  @DisplayName("Test correct operation of setItemQuantityForOrder")
+  public void testShieldingIndividualSetItemQuantityForOrder() {
+    AssertionError notRegisteredErr = assertThrows(AssertionError.class, () -> {
+      clientImp.setItemQuantityForOrder(1, this.testOrderId, 1);
+    });
+    String expectedMessage = "Individual must be registered first";
+    String actualMessage = notRegisteredErr.getMessage();
+    assertEquals(expectedMessage, actualMessage,
+            "Method should not allow unregistered users to get item name");
+
+    clientImp.setRegistered(true);
+    Map<Integer, FoodBoxOrder> ordersDict = new HashMap<>();
+    clientImp.setOrdersDict(ordersDict);
+
+    assertFalse(clientImp.setItemQuantityForOrder(1, this.testOrderId,1 ),
+            "Working method should return false when orderId is not found");
+
+    FoodBoxOrder order = new FoodBoxOrder();
+    Map<Integer, BoxItem> itemsDict = new HashMap<>();
+    BoxItem item1 = new BoxItem();
+    int item1Quantity = 5;
+    item1.setQuantity(item1Quantity);
+    itemsDict.put(1,item1);
+    BoxItem item2 = new BoxItem();
+    item2.setQuantity(10);
+    itemsDict.put(2,item2);
+    order.setItemsDict(itemsDict);
+    ordersDict.put(this.testOrderId, order);
+
+    assertFalse(clientImp.setItemQuantityForOrder(3, this.testOrderId,1),
+            "Working method should return false when itemId is not found");
+    assertFalse(clientImp.setItemQuantityForOrder(1, this.testOrderId,item1Quantity+2),
+            "Working method should not allow user to increase quantity");
+    assertTrue(clientImp.setItemQuantityForOrder(1, this.testOrderId, 1));
+    assertTrue(clientImp.setItemQuantityForOrder(2, this.testOrderId,1));
+  }
 
 
 }

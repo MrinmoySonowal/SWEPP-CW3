@@ -675,7 +675,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     if (!this.ordersDict.containsKey(orderNumber)) return false;
     Map<Integer, BoxItem> orderItemsDict = this.ordersDict.get(orderNumber).getItemsDict();
     if (!orderItemsDict.containsKey(itemId)) return false;
-    if (quantity < 0 && quantity > orderItemsDict.get(itemId).getQuantity()) return false;
+    if (quantity < 0 || quantity > orderItemsDict.get(itemId).getQuantity()) return false;
 
     orderItemsDict.get(itemId).setQuantity(quantity);
     return true;
