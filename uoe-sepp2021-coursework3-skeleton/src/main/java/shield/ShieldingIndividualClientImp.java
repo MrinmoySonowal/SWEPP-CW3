@@ -64,9 +64,6 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public void setDefaultFoodBoxes(Map<Integer, MyMessagingFoodBox> defaultFoodBoxes) {
     this.defaultFoodBoxes = defaultFoodBoxes;
   }
-  public Map<Integer, MyMessagingFoodBox> getterDefaultFoodBoxes() {
-    return defaultFoodBoxes;
-  }
 
   /** Internal field only used for transmission purposes;
    * Temporary format for storing food box details (as returned from server). */

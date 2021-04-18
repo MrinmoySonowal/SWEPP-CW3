@@ -367,6 +367,22 @@ public class ShieldingIndividualClientImpTest {
   }
 
   @Test
+  @DisplayName("Test correct operation of getCateringCompanies")
+  public void testShieldingIndividualGetCateringCompanies() {
+    AssertionError notRegisteredErr = assertThrows(AssertionError.class, () -> {
+      clientImp.getCateringCompanies();
+    });
+    String expectedMessage = "Individual must be registered first";
+    String actualMessage = notRegisteredErr.getMessage();
+    assertEquals(expectedMessage, actualMessage,
+            "Method should not allow unregistered users to get caterers");
+
+    clientImp.setRegistered(true);
+    assertNotEquals(clientImp.getCateringCompanies(), Collections.EMPTY_LIST,
+            "Method should not return empty list (since we have registered a caterer in setup()");
+  }
+
+  @Test
   @DisplayName("Test correct operation of requestOrderStatus")
   public void testShieldingIndividualRequestOrderStatus() {
     AssertionError notRegisteredErr = assertThrows(AssertionError.class, () -> {
