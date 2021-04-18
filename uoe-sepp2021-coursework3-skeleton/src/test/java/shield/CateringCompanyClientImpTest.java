@@ -7,7 +7,6 @@ package shield;
 import org.junit.jupiter.api.*;
 
 import java.time.format.DateTimeFormatter;
-import java.util.Collection;
 import java.util.Properties;
 import java.time.LocalDateTime;
 import java.io.InputStream;
@@ -24,8 +23,14 @@ public class CateringCompanyClientImpTest {
   private final static String clientPropsFilename = "client.cfg";
 
   private Properties clientProps;
-  private CateringCompanyClient client;
-  private ShieldingIndividualClientImp shieldingIndv;
+  private CateringCompanyClientImp clientImp;
+  private ShieldingIndividualClientImp shieldingImp;
+  private String validRngCHI;
+  private final String POSTCODE_REGEX_STRICT = "EH[0-9][0-9]_[0-9][A-Z][A-Z]";
+  String testCHI = "1210782341";
+  String testCaterName = "nearestCaterer";
+  String testCaterPostcode = "EH55_2BT";
+  int testOrderId;
 
   private Properties loadProperties(String propsFilename) {
     ClassLoader loader = Thread.currentThread().getContextClassLoader();
@@ -44,9 +49,39 @@ public class CateringCompanyClientImpTest {
   @BeforeEach
   public void setup() {
     clientProps = loadProperties(clientPropsFilename);
+    clientImp = new CateringCompanyClientImp(clientProps.getProperty("endpoint"));
+    shieldingImp = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
 
-    client = new CateringCompanyClientImp(clientProps.getProperty("endpoint"));
-    shieldingIndv = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
+    String requestRegUser = String.format("/registerShieldingIndividual?CHI=%s", this.testCHI);
+    try {
+      ClientIO.doGETRequest(clientProps.getProperty("endpoint") + requestRegUser);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+
+    String requestRegCaterer = String.format("/registerCateringCompany?business_name=%s&postcode=%s",
+            this.testCaterName,this.testCaterPostcode);
+    try {
+      ClientIO.doGETRequest(clientProps.getProperty("endpoint") + requestRegCaterer);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+
+    String requestPlaceOrder = String.format("/placeOrder?individual_id=%s" +
+                    "&catering_business_name=%s" +
+                    "&catering_postcode=%s",
+            this.testCHI, this.testCaterName, this.testCaterPostcode);
+    String data = "{\"contents\":[]}";
+    try {
+      this.testOrderId = Integer.parseInt(ClientIO.doPOSTRequest(clientProps.getProperty("endpoint") + requestPlaceOrder, data));
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+
+    Random rand = new Random();
+    String dateTime = DateTimeFormatter.ofPattern("ddMMyy").format(LocalDateTime.now());
+    String lastFour = String.valueOf(rand.nextInt(9999 - 1000) + 1000);
+    this.validRngCHI = dateTime + lastFour;
   }
 
   @Test
@@ -57,19 +92,19 @@ public class CateringCompanyClientImpTest {
     String badPostcode = String.valueOf(rand.nextInt(10000));
 
     AssertionError badPostcodeErr = assertThrows(AssertionError.class, () -> {
-      client.registerCateringCompany(name, badPostcode);
+      clientImp.registerCateringCompany(name, badPostcode);
     });
     String expectedMessage = String.format("Postcode %s is the wrong format", badPostcode);
     String actualMessage = badPostcodeErr.getMessage();
     assertEquals(expectedMessage, actualMessage, "Method should fail if postcode is of wrong format");
 
-    //assertTrue(client.registerCateringCompany(name, "EH16_5AY"));
+    //assertTrue(clientImp.registerCateringCompany(name, "EH16_5AY"));
     // TODO: registerCateringCompany test failed cuz server returned newId instead of "registered new" (goes against documentation).
 
-    // SO: we 'plant' our own caterer "Caterer1234,EH16_5AY" into providers.txt to test "already registered"
-    assertTrue(client.registerCateringCompany("Caterer1234", "EH16_5AY"));
-    assertTrue(client.isRegistered());
-    assertEquals(client.getName(), "Caterer1234");
+    assertTrue(clientImp.registerCateringCompany("Caterer1234", "EH16_5AY"));
+    assertTrue(clientImp.isRegistered());
+    assertEquals(clientImp.getName(), "Caterer1234");
+    assertEquals(clientImp.getPostCode(),"EH16_5AY");
   }
 
   @RepeatedTest(5)
@@ -79,29 +114,12 @@ public class CateringCompanyClientImpTest {
     String[] validStatuses= {"packed", "dispatched", "delivered"};
     String status = validStatuses[rand.nextInt(validStatuses.length)];
 
-    assertFalse(client.updateOrderStatus(rand.nextInt(), status), "Method should return false for invalid orderID");
+    assertFalse(clientImp.updateOrderStatus(rand.nextInt(), status), "Method should return false for invalid orderID");
 
     // TODO to test client.updateOrderStatus returning "True", we need first to place an order via shieldingIndividual,
     //  and then once that order is placed, use that order as a 'planted' order for this test.
-    boolean goodPostcode = false;
-    while (!goodPostcode) {
-      String dateTime = DateTimeFormatter.ofPattern("ddMMyy").format(LocalDateTime.now());
-      String lastFour = String.valueOf(rand.nextInt(9999-1000)+1000);
-      shieldingIndv.registerShieldingIndividual(dateTime + lastFour);
-      // server can randomly not return a postcode cuz indiv is already registered OR produce postcodes of the wrong format
-      if (shieldingIndv.postcode != null && (shieldingIndv.postcode.length() == 8 || shieldingIndv.postcode.length() == 7)) {
-        goodPostcode = true;
-      } else {
-        System.err.println("Server did a poo poo and gave us a postcode with the wrong format / individual already registered.");
-        // TODO consider delete
-      }
-    }
-    client.registerCateringCompany("Cat", "EH16_5AY");
-    shieldingIndv.getClosestCateringCompany();
-    shieldingIndv.pickFoodBox(1);
-    shieldingIndv.placeOrder();
-    int orderID = shieldingIndv.pickedFoodBox.getOrderID();
-    assertTrue(client.updateOrderStatus(orderID, "packed"), "Method should return true for correct operation");
-    assertFalse(client.updateOrderStatus(orderID, "Gibberish"), "Method should return false for invalid status");
+
+    assertTrue(clientImp.updateOrderStatus(this.testOrderId, "packed"), "Method should return true for correct operation");
+    assertFalse(clientImp.updateOrderStatus(this.testOrderId, "Gibberish"), "Method should return false for invalid status");
   }
 }
