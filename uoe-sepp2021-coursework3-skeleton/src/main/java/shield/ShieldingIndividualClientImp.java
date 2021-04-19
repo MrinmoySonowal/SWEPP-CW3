@@ -64,6 +64,12 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public void setDefaultFoodBoxes(Map<Integer, MyMessagingFoodBox> defaultFoodBoxes) {
     this.defaultFoodBoxes = defaultFoodBoxes;
   }
+  public Map<Integer, FoodBoxOrder> getOrdersDict() {
+    return ordersDict;
+  }
+  public FoodBoxOrder getPickedFoodBox() {
+    return pickedFoodBox;
+  }
 
   /** Internal field only used for transmission purposes;
    * Temporary format for storing food box details (as returned from server). */
@@ -97,11 +103,11 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   private String nearestCatererName;
   private String nearestCateringPostCode;
   /** Stores FoodBoxOrder obj of the user-picked food box. Is picked according to food box id. */
-  protected FoodBoxOrder pickedFoodBox;
+  private FoodBoxOrder pickedFoodBox;
   private String forename;
   private String surname;
   private String phoneNum;
-  protected String postcode;  // TODO change to private after testing
+  private String postcode;  // TODO change to private after testing
 
 
   public ShieldingIndividualClientImp(String endpoint) {
@@ -213,7 +219,6 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     try {
       // perform request:
       String response = ClientIO.doGETRequest(endpoint + request);
-      //System.out.println(response);
       // unmarshal response:
       Type listType = new TypeToken<List<MyMessagingFoodBox>>() {}.getType();
       responseBoxes = new Gson().fromJson(response, listType);
@@ -270,7 +275,6 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     Gson gson = new Gson();
     String items = gson.toJson(boxItemsList);
     String data = String.format("{\"contents\":%s}", items);
-    System.out.println(data);
     // form order data using the pickedFoodBox order
     try {
       String orderID = ClientIO.doPOSTRequest(endpoint + request, data);

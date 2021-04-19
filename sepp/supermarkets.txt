@@ -1,4 +1,5 @@
 
-1,test,EH16_5AY
-2,9617,EH16_5AY
-3,8290,EH16_5AY
+1,supermarket,EH14_2BU
+2,supermarket1,EH07_9EB
+3,test,EH16_5AY
+4,4559,EH16_5AY
