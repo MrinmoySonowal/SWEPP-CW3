@@ -118,8 +118,8 @@ public class SystemTests {
     public void testRegisterSupermarket() {
         assertTrue(supermarketImp.registerSupermarket("supermarket1", "EH07_9EB"));
         assertTrue(supermarketImp.isRegistered());
-        assertFalse(supermarketImp.getName().isBlank());
-        assertFalse(supermarketImp.getPostCode().isBlank());
+        assertEquals(supermarketImp.getName(),"supermarket1" );
+        assertEquals(supermarketImp.getPostCode(), "EH07_9EB");
     }
 
     @Test
@@ -129,7 +129,7 @@ public class SystemTests {
         assertTrue(cateringImp.registerCateringCompany("caterer1","EH16_5AY"));
         assertTrue(cateringImp.registerCateringCompany("caterer2","EH17_5AY"));
         List<String> caterers = List.of("caterer1","caterer2");
-
+        // TODO Make sure getClosestCateringCompany() is a part of the main success scenario
         // pick food box and place order
         assertTrue(caterers.contains(shieldingImp.getClosestCateringCompany()));
         List<String> fbIDs = (List<String>) shieldingImp.showFoodBoxes("none");
@@ -240,6 +240,13 @@ public class SystemTests {
         int ourOrderId = orderIds.get(0);
 
         assertTrue(shieldingImp.cancelOrder(ourOrderId));
+        assertFalse(shieldingImp.requestOrderStatus(ourOrderId),
+                "Method returns false as order doesn't exist anymore");
+        AssertionError orderNotFoundError = assertThrows(AssertionError.class, () -> {
+            shieldingImp.getStatusForOrder(ourOrderId);
+        });
+        String expectedErrorMessage = "Order not found";
+        assertEquals(orderNotFoundError.getMessage(), expectedErrorMessage);
     }
 
     @Test
@@ -268,8 +275,50 @@ public class SystemTests {
         assertFalse(shieldingImp.cancelOrder(ourOrderId),
                 "Method returns false when trying to cancel dispatched, delivered or already-cancelled orders");
     }
+    @Test
+    @DisplayName("Test Catering Company Update Order main success scenarios")
+    public void testCateringUpdateOrderStatusMainSuccess(){
+        //TODO consider making this the test for both update order and request order status
+        assertTrue(shieldingImp.registerShieldingIndividual(this.validRngCHI));
+        assertTrue(cateringImp.registerCateringCompany("caterer1","EH16_5AY"));
+        List<String> caterers = List.of("caterer1","caterer2");
+        assertTrue(caterers.contains(shieldingImp.getClosestCateringCompany()));
+        // pick food box and place order
+        List<String> fbIDs = (List<String>) shieldingImp.showFoodBoxes("none");
+        List<String> noneFbIds = List.of("1","3","4");
+        assertEquals(fbIDs, noneFbIds);
+        assertTrue(shieldingImp.pickFoodBox(1));
+        assertTrue(shieldingImp.placeOrder());
 
+        List<Integer> orderIds = new ArrayList<>(shieldingImp.getOrdersDict().keySet());
+        int ourOrderId = orderIds.get(0);
 
+        assertTrue(cateringImp.updateOrderStatus(ourOrderId, "dispatched"));  // order delivered
+        assertTrue(shieldingImp.requestOrderStatus(ourOrderId));
+        String expectedStatus = "2" ; // Status for ORDER_DISPATCHED in ShieldingIndividualClientImp class
+        assertEquals(shieldingImp.getStatusForOrder(ourOrderId), expectedStatus);
 
+        assertTrue(cateringImp.updateOrderStatus(ourOrderId, "delivered"));  // order delivered
+        assertTrue(shieldingImp.requestOrderStatus(ourOrderId));
+        expectedStatus = "3" ; // Status for ORDER_DELIVERED in ShieldingIndividualClientImp class
+        assertEquals(shieldingImp.getStatusForOrder(ourOrderId), expectedStatus);
+    }
+
+    @Test
+    @DisplayName("Test Update Supermarket order status")
+    public void testUpdateSupermarketOrderStatus(){
+        assertTrue(shieldingImp.registerShieldingIndividual(this.validRngCHI));
+        Random rand = new Random();
+        int orderNumber =rand.nextInt(1000) ;
+        assertFalse(supermarketImp.recordSupermarketOrder(this.validRngCHI, orderNumber),
+                "Working method should return false as supermarket is not registered yet");
+        assertTrue(supermarketImp.registerSupermarket("supermarket1", "EH07_9EB"));
+        assertTrue(supermarketImp.isRegistered());
+        assertTrue(supermarketImp.recordSupermarketOrder(this.validRngCHI, orderNumber),
+                "Working method should return true ");
+
+        assertFalse(supermarketImp.updateOrderStatus(orderNumber, "Gibberish"), "Method should return false for invalid status");
+        assertTrue(supermarketImp.updateOrderStatus(orderNumber, "dispatched"));  // order dispatched
+    }
 
 }

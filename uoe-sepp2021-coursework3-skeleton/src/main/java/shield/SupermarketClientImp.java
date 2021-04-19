@@ -65,7 +65,7 @@ public class SupermarketClientImp implements SupermarketClient {
    * Note that there is a dedicated server endpoint for implementing this called
    * recordSupermarketOrder
    *
-   * @param CHI CHI number of the shiedling individual associated with this order
+   * @param CHI CHI number of the shielding individual associated with this order
    * @param orderNumber the order number
    * @return true if the operation occurred correctly
    */
