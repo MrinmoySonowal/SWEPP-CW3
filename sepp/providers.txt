@@ -1,5 +1,5 @@
 1,caterer1,EH16_5AY
 2,caterer2,EH17_5AY
-2,cat1,EH44_9BH
+3,cat1,EH44_9BH
 3,nearestCaterer,EH55_2BT
 4,Caterer1234,EH16_5AY
