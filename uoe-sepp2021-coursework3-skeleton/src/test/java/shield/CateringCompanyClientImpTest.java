@@ -99,7 +99,7 @@ public class CateringCompanyClientImpTest {
     assertEquals(expectedMessage, actualMessage, "Method should fail if postcode is of wrong format");
 
     //assertTrue(clientImp.registerCateringCompany(name, "EH16_5AY"));
-    // TODO: registerCateringCompany test failed cuz server returned newId instead of "registered new" (goes against documentation).
+    // registerCateringCompany test failed cuz server returned newId instead of "registered new" (goes against documentation).
 
     assertTrue(clientImp.registerCateringCompany("Caterer1234", "EH16_5AY"));
     assertTrue(clientImp.isRegistered());

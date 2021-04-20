@@ -1,16 +1,5 @@
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.reflect.TypeToken;
-import shield.BoxItem;
 import shield.FoodBoxOrder;
-import shield.ShieldingIndividualClientImp;
 
-import javax.swing.*;
-import java.lang.reflect.Type;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,19 +53,19 @@ public class testtest {
             System.out.println(e.getMessage());
         }
 
-        List<BoxItem> testList = new ArrayList<>();
-        BoxItem item1 = new BoxItem();
+        List<FoodBoxItem> testList = new ArrayList<>();
+        FoodBoxItem item1 = new FoodBoxItem();
         item1.setId(1);
         item1.setName("item1");
         item1.setQuantity(1);
-        BoxItem item2 = new BoxItem();
+        FoodBoxItem item2 = new FoodBoxItem();
         item2.setId(2);
         item2.setName("item2");
         item2.setQuantity(2);
         testList.add(item1);
         testList.add(item2);
 
-        HashMap<String, List<BoxItem>> dict = new HashMap<>();
+        HashMap<String, List<FoodBoxItem>> dict = new HashMap<>();
         dict.put("contents", testList);
 
         Gson gson = new Gson();
@@ -84,13 +73,13 @@ public class testtest {
         System.out.printf("{\"contents\":%s}%n", items);
 
         FoodBoxOrder order = new FoodBoxOrder();
-        Map<Integer, BoxItem> itemsDict = new HashMap<>();
+        Map<Integer, FoodBoxItem> itemsDict = new HashMap<>();
         itemsDict.put(item1.getId(), item1);
         itemsDict.put(item2.getId(), item2);
         order.setItemsDict(itemsDict);
         System.out.println(order.getItemsDict());
         //order.getItemsDict().get(1).setQuantity(100);
-        Map<Integer, BoxItem> newMap = order.getItemsDict();
+        Map<Integer, FoodBoxItem> newMap = order.getItemsDict();
         newMap.get(1).setQuantity(100);
         System.out.println(newMap);
         System.out.println(order.getItemsDict());

@@ -14,21 +14,22 @@ import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * NOTE TO MARKER:
+ * Please remove all empty newlines at the start of the database .txt and .csv files after
+ * initialisation -- these unwanted empty lines will break the code (PIAZZA Post @832).
+ *
+ * Contains tests to verify general functionality and use-case-centric functionality of system.
+ */
 public class SystemTests {
 
     private final static String clientPropsFilename = "client.cfg";
 
     private Properties clientProps;
-    //private ShieldingIndividualClient client;
     private ShieldingIndividualClientImp shieldingImp;
     private CateringCompanyClientImp cateringImp;
     private SupermarketClientImp supermarketImp;
     private String validRngCHI;
-    private final String POSTCODE_REGEX_STRICT = "EH[0-9][0-9]_[0-9][A-Z][A-Z]";
-    String testCHI = "1210782341";
-    String testCaterName = "nearestCaterer";
-    String testCaterPostcode = "EH55_2BT";
-    int testOrderId;
 
     private Properties loadProperties(String propsFilename) {
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
@@ -129,7 +130,7 @@ public class SystemTests {
         assertTrue(cateringImp.registerCateringCompany("caterer1","EH16_5AY"));
         assertTrue(cateringImp.registerCateringCompany("caterer2","EH17_5AY"));
         List<String> caterers = List.of("caterer1","caterer2");
-        // TODO Make sure getClosestCateringCompany() is a part of the main success scenario
+
         // pick food box and place order
         assertTrue(caterers.contains(shieldingImp.getClosestCateringCompany()));
         List<String> fbIDs = (List<String>) shieldingImp.showFoodBoxes("none");
@@ -242,11 +243,13 @@ public class SystemTests {
         assertTrue(shieldingImp.cancelOrder(ourOrderId));
         assertFalse(shieldingImp.requestOrderStatus(ourOrderId),
                 "Method returns false as order doesn't exist anymore");
+
         AssertionError orderNotFoundError = assertThrows(AssertionError.class, () -> {
             shieldingImp.getStatusForOrder(ourOrderId);
         });
         String expectedErrorMessage = "Order not found";
-        assertEquals(orderNotFoundError.getMessage(), expectedErrorMessage);
+        assertEquals(orderNotFoundError.getMessage(), expectedErrorMessage,
+                "Working method should successfully cancel order");
     }
 
     @Test
@@ -277,8 +280,7 @@ public class SystemTests {
     }
     @Test
     @DisplayName("Test Catering Company Update Order main success scenarios")
-    public void testCateringUpdateOrderStatusMainSuccess(){
-        //TODO consider making this the test for both update order and request order status
+    public void testCateringUpdateOrderStatusMainSuccess() {
         assertTrue(shieldingImp.registerShieldingIndividual(this.validRngCHI));
         assertTrue(cateringImp.registerCateringCompany("caterer1","EH16_5AY"));
         List<String> caterers = List.of("caterer1","caterer2");
@@ -306,7 +308,7 @@ public class SystemTests {
 
     @Test
     @DisplayName("Test Update Supermarket order status")
-    public void testUpdateSupermarketOrderStatus(){
+    public void testUpdateSupermarketOrderStatus() {
         assertTrue(shieldingImp.registerShieldingIndividual(this.validRngCHI));
         Random rand = new Random();
         int orderNumber =rand.nextInt(1000) ;
@@ -319,6 +321,32 @@ public class SystemTests {
 
         assertFalse(supermarketImp.updateOrderStatus(orderNumber, "Gibberish"), "Method should return false for invalid status");
         assertTrue(supermarketImp.updateOrderStatus(orderNumber, "dispatched"));  // order dispatched
+    }
+
+    @Test
+    @DisplayName("Test Request Order Status")
+    public void testRequestOrderStatus() {
+        assertTrue(shieldingImp.registerShieldingIndividual(this.validRngCHI));
+        assertTrue(cateringImp.registerCateringCompany("caterer1","EH16_5AY"));
+        List<String> caterers = List.of("caterer1","caterer2");
+        assertTrue(caterers.contains(shieldingImp.getClosestCateringCompany()));
+        // pick food box and place order
+        List<String> fbIDs = (List<String>) shieldingImp.showFoodBoxes("none");
+        List<String> noneFbIds = List.of("1","3","4");
+        assertEquals(fbIDs, noneFbIds);
+        assertTrue(shieldingImp.pickFoodBox(1));
+        assertTrue(shieldingImp.placeOrder());
+        List<Integer> orderIds = new ArrayList<>(shieldingImp.getOrdersDict().keySet());
+        int ourOrderId = orderIds.get(0);
+        assertTrue(shieldingImp.requestOrderStatus(ourOrderId));
+    }
+
+    @Test
+    @DisplayName("Test Request Order Status Extension Scenarios")
+    public void testRequestOrderStatusExt() {
+        assertTrue(shieldingImp.registerShieldingIndividual(this.validRngCHI));
+        assertFalse(shieldingImp.requestOrderStatus(-1),
+                "Method should return false if orderID does not exist");
     }
 
 }

@@ -5,13 +5,9 @@
 package shield;
 
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import org.junit.jupiter.api.*;
 
-import javax.print.attribute.HashPrintJobAttributeSet;
-import java.lang.reflect.Type;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,14 +23,16 @@ import java.util.regex.Pattern;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
+ * NOTE TO MARKER:
+ * Please remove all empty newlines at the start of the database .txt and .csv files after
+ * initialisation -- these unwanted empty lines will break the code (PIAZZA Post @832).
  *
+ * Contains tests to verify unit / method-centric functionality.
  */
-
 public class ShieldingIndividualClientImpTest {
   private final static String clientPropsFilename = "client.cfg";
 
   private Properties clientProps;
-  //private ShieldingIndividualClient client;
   private ShieldingIndividualClientImp clientImp;
   private CateringCompanyClientImp cateringImp;
   private String validRngCHI;
@@ -95,8 +93,6 @@ public class ShieldingIndividualClientImpTest {
     String lastFour = String.valueOf(rand.nextInt(9999 - 1000) + 1000);
     this.validRngCHI = dateTime + lastFour;
   }
-
-  // TODO (BIG): replace all unrelated methods in UnitTests with setters (public)
 
   @Test
   @DisplayName("Testing correct value for registerShieldingIndividual")
@@ -332,7 +328,6 @@ public class ShieldingIndividualClientImpTest {
   @Test
   @DisplayName("Test correct operation of cancelOrder")
   public void testShieldingIndividualCancelOrder(){
-    //TODO
     AssertionError notRegisteredErr = assertThrows(AssertionError.class, () -> {
       clientImp.cancelOrder(this.testOrderId);
     });
@@ -359,7 +354,6 @@ public class ShieldingIndividualClientImpTest {
       assertFalse(clientImp.cancelOrder(this.testOrderId),
               "Working method should not allow order changes unless status is Placed or Packed");
     }
-
     String ORDER_PLACED = "0";
     order.setOrderStatus(ORDER_PLACED);  // set order placed
     assertTrue(clientImp.cancelOrder(this.testOrderId),
@@ -416,7 +410,6 @@ public class ShieldingIndividualClientImpTest {
   @Test
   @DisplayName("Test correct operation of getDietaryPreferenceForFoodBox")
   public void testShieldingIndividualGetDietaryPreferenceForFoodBox() {
-    // TODO: review how to make test better (without using external methods)
     clientImp.setDefaultFoodBoxes(clientImp.getAllDefaultFoodBoxesFromServer());  // method already verified from before
     assertEquals(clientImp.getDietaryPreferenceForFoodBox(1), "none");
     assertEquals(clientImp.getDietaryPreferenceForFoodBox(2), "pollotarian");
@@ -437,7 +430,16 @@ public class ShieldingIndividualClientImpTest {
             "Method should not allow unregistered users to cancel order");
 
     clientImp.setRegistered(true);
-    // TODO Change to Food Box Order
+    FoodBoxOrder pickedFB = new FoodBoxOrder();
+    pickedFB.setOrderID(1);
+    FoodBoxItem boxItem1 = new FoodBoxItem();
+    boxItem1.setId(2);
+    boxItem1.setQuantity(3);
+    Map<Integer, FoodBoxItem> boxItemsDict = new HashMap<>();
+    boxItemsDict.put(1,boxItem1);
+    pickedFB.setItemsDict(boxItemsDict);
+
+    clientImp.setPickedFoodBox(pickedFB);
     clientImp.pickFoodBox(1);
     //quantity = 2 for item 2 for foodBoxId 1 in food_boxes.txt
     assertFalse(clientImp.changeItemQuantityForPickedFoodBox(2,3),
@@ -491,8 +493,6 @@ public class ShieldingIndividualClientImpTest {
     assertEquals(clientImp.getItemIdsForFoodBox(4), fb4Items);
     List<Integer> fb5Items = List.of(9,11,12);
     assertEquals(clientImp.getItemIdsForFoodBox(5), fb5Items);
-//    List<List<Integer>> allItems = List.of(fb1Items, fb2Items);
-//    for(listItems: allItems)
   }
 
   @Test
@@ -622,13 +622,13 @@ public class ShieldingIndividualClientImpTest {
     order.setOrderID(this.testOrderId);
     ordersDict.put(this.testOrderId, order);
 
-    Map<Integer, BoxItem> itemsDict = new HashMap<>();
+    Map<Integer, FoodBoxItem> itemsDict = new HashMap<>();
     order.setItemsDict(itemsDict);
     assertEquals(clientImp.getItemIdsForOrder(this.testOrderId), Collections.EMPTY_LIST );
 
-    BoxItem item1 = new BoxItem();
+    FoodBoxItem item1 = new FoodBoxItem();
     itemsDict.put(1,item1);
-    BoxItem item2 = new BoxItem();
+    FoodBoxItem item2 = new FoodBoxItem();
     itemsDict.put(2,item2);
     assertEquals(clientImp.getItemIdsForOrder(this.testOrderId), List.of(1,2));
   }
@@ -657,11 +657,11 @@ public class ShieldingIndividualClientImpTest {
             "Method should not allow querying for statuses of non-existent orders");
 
     FoodBoxOrder order = new FoodBoxOrder();
-    Map<Integer, BoxItem> itemsDict = new HashMap<>();
-    BoxItem item1 = new BoxItem();
+    Map<Integer, FoodBoxItem> itemsDict = new HashMap<>();
+    FoodBoxItem item1 = new FoodBoxItem();
     item1.setName("carrots");
     itemsDict.put(1,item1);
-    BoxItem item2 = new BoxItem();
+    FoodBoxItem item2 = new FoodBoxItem();
     item2.setName("banana");
     itemsDict.put(2,item2);
 
@@ -703,11 +703,11 @@ public class ShieldingIndividualClientImpTest {
             "Method should not allow querying for statuses of non-existent orders");
 
     FoodBoxOrder order = new FoodBoxOrder();
-    Map<Integer, BoxItem> itemsDict = new HashMap<>();
-    BoxItem item1 = new BoxItem();
+    Map<Integer, FoodBoxItem> itemsDict = new HashMap<>();
+    FoodBoxItem item1 = new FoodBoxItem();
     item1.setQuantity(1);
     itemsDict.put(1,item1);
-    BoxItem item2 = new BoxItem();
+    FoodBoxItem item2 = new FoodBoxItem();
     item2.setQuantity(2);
     itemsDict.put(2,item2);
     order.setItemsDict(itemsDict);
@@ -744,12 +744,12 @@ public class ShieldingIndividualClientImpTest {
             "Working method should return false when orderId is not found");
 
     FoodBoxOrder order = new FoodBoxOrder();
-    Map<Integer, BoxItem> itemsDict = new HashMap<>();
-    BoxItem item1 = new BoxItem();
+    Map<Integer, FoodBoxItem> itemsDict = new HashMap<>();
+    FoodBoxItem item1 = new FoodBoxItem();
     int item1Quantity = 5;
     item1.setQuantity(item1Quantity);
     itemsDict.put(1,item1);
-    BoxItem item2 = new BoxItem();
+    FoodBoxItem item2 = new FoodBoxItem();
     item2.setQuantity(10);
     itemsDict.put(2,item2);
     order.setItemsDict(itemsDict);
@@ -762,6 +762,4 @@ public class ShieldingIndividualClientImpTest {
     assertTrue(clientImp.setItemQuantityForOrder(1, this.testOrderId, 1));
     assertTrue(clientImp.setItemQuantityForOrder(2, this.testOrderId,1));
   }
-
-
 }

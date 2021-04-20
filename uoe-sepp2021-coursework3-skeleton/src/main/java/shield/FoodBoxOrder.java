@@ -12,7 +12,7 @@ public class FoodBoxOrder {
     private String orderStatus;
     // REMOVED private DeliveryStatus deliveryStatus;
     private String deliveryService;
-    private Map<Integer, BoxItem> itemsDict = new HashMap<>();
+    private Map<Integer, FoodBoxItem> itemsDict = new HashMap<>();
     private String orderSource;
     private LocalDateTime deliveryTime;
 
@@ -25,13 +25,6 @@ public class FoodBoxOrder {
     public String getOrderStatus() {
         return orderStatus;
     }
-
-    /*
-    REMOVED
-    public DeliveryStatus getDeliveryStatus() {
-        return deliveryStatus;
-    }
-    */
 
     public String getDeliveryService() {
         return deliveryService;
@@ -52,12 +45,6 @@ public class FoodBoxOrder {
     public void setOrderStatus(String orderStatus) {
         this.orderStatus = orderStatus;
     }
-
-    /*
-    public void setDeliveryStatus(DeliveryStatus deliveryStatus) {
-        this.deliveryStatus = deliveryStatus;
-    }
-    */
 
     public void setDeliveryService(String deliveryService) {
         this.deliveryService = deliveryService;
@@ -87,11 +74,11 @@ public class FoodBoxOrder {
         this.name = name;
     }
 
-    public Map<Integer, BoxItem> getItemsDict() {
+    public Map<Integer, FoodBoxItem> getItemsDict() {
         return itemsDict;
     }
 
-    public void setItemsDict(Map<Integer, BoxItem> itemsDict) {
+    public void setItemsDict(Map<Integer, FoodBoxItem> itemsDict) {
         this.itemsDict = itemsDict;
     }
 }

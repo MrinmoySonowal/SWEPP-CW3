@@ -74,18 +74,18 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   /** Internal field only used for transmission purposes;
    * Temporary format for storing food box details (as returned from server). */
   private class MyMessagingFoodBox {
-    List<BoxItem> contents = new ArrayList<>();
+    List<FoodBoxItem> contents = new ArrayList<>();
     String delivered_by;
     String diet;
     Integer id;
     String name;
 
     /** Creates dictionary of food box items using 'contents' list;
-     * Key is item id, Value is food BoxItem ref. */
-    private Map<Integer, BoxItem> getContentsDict() {
+     * Key is item id, Value is food FoodBoxItem ref. */
+    private Map<Integer, FoodBoxItem> getContentsDict() {
       //if (this.contents == null) {this.contents = new ArrayList<>();}
-      Map<Integer, BoxItem> contentsDict = new HashMap<>();
-      for (BoxItem item : this.contents) {
+      Map<Integer, FoodBoxItem> contentsDict = new HashMap<>();
+      for (FoodBoxItem item : this.contents) {
         contentsDict.put(item.getId(), item);
       }
       return contentsDict;
@@ -107,8 +107,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   private String forename;
   private String surname;
   private String phoneNum;
-  private String postcode;  // TODO change to private after testing
-
+  private String postcode;
 
   public ShieldingIndividualClientImp(String endpoint) {
     this.endpoint = endpoint;
@@ -137,7 +136,6 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       Type listType = new TypeToken<List<String>>() {}.getType();
       List<String> personalDetailsArr = new Gson().fromJson(response, listType);
 
-      // TODO ASK in QnA whether to use separate if-statements or use if-elseif-else block.
       if (personalDetailsArr == null) throw new NullPointerException("ERROR: Server GET request failed.");
       if (personalDetailsArr.size() != 4) throw new NullPointerException("ERROR: Server response corrupted.");
       this.postcode = personalDetailsArr.get(0);
@@ -205,7 +203,6 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    *
    * @return Map of default food boxes as found on server for dietary preference.
    */
-  // TODO test this private mtd explicitly in ShieldingIndividualClientImpTest
   protected Map<Integer, MyMessagingFoodBox> getDefaultFoodBoxesFromServer(String dietaryPreference) {
     if (!(DIET_TYPES.contains(dietaryPreference) || dietaryPreference.equals(NO_DIET))) {
       System.err.printf("%s is an invalid dietary preference", dietaryPreference);
@@ -271,9 +268,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
                                    "&catering_business_name=%s" +
                                    "&catering_postcode=%s",
                                    this.chiNum, this.nearestCatererName, this.nearestCateringPostCode);
-    List<BoxItem> boxItemsList = new ArrayList<>(this.pickedFoodBox.getItemsDict().values());
+    List<FoodBoxItem> foodBoxItemsList = new ArrayList<>(this.pickedFoodBox.getItemsDict().values());
     Gson gson = new Gson();
-    String items = gson.toJson(boxItemsList);
+    String items = gson.toJson(foodBoxItemsList);
     String data = String.format("{\"contents\":%s}", items);
     // form order data using the pickedFoodBox order
     try {
@@ -303,9 +300,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     boolean isOrderPacked = this.ordersDict.get(orderNumber).getOrderStatus().equals(ORDER_PACKED);
     if (!isOrderPlaced && !isOrderPacked) return false;
     String request = String.format("/editOrder?order_id=%s", orderNumber);
-    List<BoxItem> boxItemsList = new ArrayList<>(this.ordersDict.get(orderNumber).getItemsDict().values());
+    List<FoodBoxItem> foodBoxItemsList = new ArrayList<>(this.ordersDict.get(orderNumber).getItemsDict().values());
     Gson gson = new Gson();
-    String items = gson.toJson(boxItemsList);
+    String items = gson.toJson(foodBoxItemsList);
     String data = String.format("{\"contents\":%s}", items);
     try {
       String response = ClientIO.doPOSTRequest(endpoint + request, data);
@@ -641,7 +638,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public String getItemNameForOrder(int itemId, int orderNumber) {
     assert(this.isRegistered()):"Individual must be registered first";
     assert(this.ordersDict.containsKey(orderNumber)) : "Order not found";
-    Map<Integer, BoxItem> orderItemsDict = this.ordersDict.get(orderNumber).getItemsDict();
+    Map<Integer, FoodBoxItem> orderItemsDict = this.ordersDict.get(orderNumber).getItemsDict();
     assert(orderItemsDict.containsKey(itemId));
     return orderItemsDict.get(itemId).getName();
   }
@@ -657,7 +654,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public int getItemQuantityForOrder(int itemId, int orderNumber) {
     assert(this.isRegistered()):"Individual must be registered first";
     assert(this.ordersDict.containsKey(orderNumber)) : "Order not found";
-    Map<Integer, BoxItem> orderItemsDict = this.ordersDict.get(orderNumber).getItemsDict();
+    Map<Integer, FoodBoxItem> orderItemsDict = this.ordersDict.get(orderNumber).getItemsDict();
     assert(orderItemsDict.containsKey(itemId)) : "Item not found for order";
     return orderItemsDict.get(itemId).getQuantity();
   }
@@ -674,7 +671,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public boolean setItemQuantityForOrder(int itemId, int orderNumber, int quantity) {
     assert(this.isRegistered()):"Individual must be registered first";
     if (!this.ordersDict.containsKey(orderNumber)) return false;
-    Map<Integer, BoxItem> orderItemsDict = this.ordersDict.get(orderNumber).getItemsDict();
+    Map<Integer, FoodBoxItem> orderItemsDict = this.ordersDict.get(orderNumber).getItemsDict();
     if (!orderItemsDict.containsKey(itemId)) return false;
     if (quantity < 0 || quantity > orderItemsDict.get(itemId).getQuantity()) return false;
 

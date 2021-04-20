@@ -1,13 +1,13 @@
 package shield;
 
-public class BoxItem {
+public class FoodBoxItem {
     private int id;
     private String name;
     private int quantity;
 
     @Override
     public String toString() {
-        return "BoxItem{" +
+        return "FoodBoxItem{" +
                 "id=" + id +
                 ", name='" + name + '\'' +
                 ", quantity=" + quantity +

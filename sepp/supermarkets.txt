@@ -1,3 +1,4 @@
-0,supermarket1,EH07_9EB
-1,catering1,EH16_5AY
-2,supermarket,EH14_2BU
+1,supermarket,EH14_2BU
+2,supermarket1,EH07_9EB
+2,test,EH16_5AY
+3,6942,EH16_5AY
