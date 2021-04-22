@@ -127,6 +127,8 @@ public class ShieldingIndividualClientImpTest {
   @DisplayName("Test correct operation of checkValidCHI")
   public void testShieldingIndividualCheckValidCHI() {
     String badCHI = "3402661234";  // 34 Feb does not exist
+    assertFalse(clientImp.checkValidCHI(null), "Working method should return false when CHI is null");
+    assertFalse(clientImp.checkValidCHI(" "), "Working method should return false when for invalid CHI");
     assertFalse(clientImp.checkValidCHI(badCHI), "Working method should return false for invalid CHI");
     assertTrue(clientImp.checkValidCHI(this.validRngCHI),"Working method should return true for valid CHI");
   }

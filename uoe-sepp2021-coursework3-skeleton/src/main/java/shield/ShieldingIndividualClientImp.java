@@ -158,7 +158,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    * @return true or false
    */
   protected boolean checkValidCHI(String CHI) {
-    if (CHI.length() != 10) return false;
+    if (CHI == null || CHI.length() != 10) return false;
     String firstSix = CHI.substring(0,6);
     try {
       LocalDate.parse(firstSix, DateTimeFormatter.ofPattern("ddMMyy"));
