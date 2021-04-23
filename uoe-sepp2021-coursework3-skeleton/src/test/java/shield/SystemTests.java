@@ -141,7 +141,6 @@ public class SystemTests {
         assertTrue(shieldingImp.placeOrder());
         // Testing if umber of orders increased by 1
         assertEquals(shieldingImp.getOrderNumbers().size(), numberOfInitialOrders+1);
-
     }
 
     @Test

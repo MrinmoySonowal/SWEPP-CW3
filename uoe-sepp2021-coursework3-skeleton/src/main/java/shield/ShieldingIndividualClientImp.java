@@ -11,15 +11,10 @@ import java.lang.reflect.Type;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 
 // student-included imports:
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.regex.Pattern;
 
 public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
@@ -34,6 +29,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   private final String RESP_TRUE = "True";
   private final String RESP_FALSE = "False";
   private List<String> DIET_TYPES = List.of("none", "pollotarian", "vegan");
+  private LinkedList<LocalDate> recentOrderTimes = new LinkedList<>();
   private final String NO_DIET = " ";
   private final String POSTCODE_REGEX = "(e|E)(h|H)([0-9]|)[0-9](_| )[0-9][a-zA-Z][a-zA-Z]";
 
@@ -263,7 +259,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   @Override
   public boolean placeOrder() { // will not use LocalDateTime
     assert(this.isRegistered()):"Individual must be registered first";
-    if(this.pickedFoodBox == null) return false;
+    if ((recentOrderTimes.size() > 0) &&
+        (ChronoUnit.DAYS.between(recentOrderTimes.getLast(), LocalDate.now()) < 7)) return false;
+    // Order can only be placed every 7 days
+    if (this.pickedFoodBox == null) return false;
     String request = String.format("/placeOrder?individual_id=%s" +
                                    "&catering_business_name=%s" +
                                    "&catering_postcode=%s",
@@ -278,6 +277,8 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       this.pickedFoodBox.setOrderStatus(ORDER_PLACED);
       this.pickedFoodBox.setOrderID(Integer.parseInt(orderID));
       this.ordersDict.put(Integer.parseInt(orderID), this.pickedFoodBox);
+      recentOrderTimes.addLast(LocalDate.now());
+      if (recentOrderTimes.size() > 8) recentOrderTimes.removeFirst();
       return true;
     } catch (Exception e) {
       e.printStackTrace();

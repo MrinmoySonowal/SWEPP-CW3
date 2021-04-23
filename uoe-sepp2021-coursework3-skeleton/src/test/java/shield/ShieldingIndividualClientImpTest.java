@@ -198,6 +198,13 @@ public class ShieldingIndividualClientImpTest {
   @DisplayName("Test correct operation of placeOrder")
   public void testShieldingIndividualPlaceOrder() {
     clientImp.setChiNum(this.testCHI);
+    AssertionError notRegisteredErr = assertThrows(AssertionError.class, () -> {
+      clientImp.editOrder(this.testOrderId);
+    });
+    String expectedMessage = "Individual must be registered first";
+    String actualMessage = notRegisteredErr.getMessage();
+    assertEquals(expectedMessage, actualMessage,
+            "Method should not allow unregistered users to order");
     clientImp.setRegistered(true);
 
     clientImp.setNearestCatererName(this.testCaterName);
@@ -205,9 +212,11 @@ public class ShieldingIndividualClientImpTest {
 
     FoodBoxOrder foodBox = new FoodBoxOrder();
     foodBox.setOrderID(1);
+    assertFalse(clientImp.placeOrder(), "Working method should return false food box hasn't been picked");
     clientImp.setPickedFoodBox(foodBox);
 
     assertTrue(clientImp.placeOrder(), "Working method should return true");
+    assertFalse(clientImp.placeOrder(), "Working method should return false as order cannot be placed less than 7 days");
   }
 
   @Test
