@@ -379,7 +379,8 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public float getDistance(String postcode1, String postcode2) {
     assert(postcode1 != null && postcode2 != null) : "Postcode cannot be null.";
 
-    String request = String.format("/distance?postcode1=%s&postcode2=%s", formatPostcode(postcode1), formatPostcode(postcode2));
+    String request = String.format("/distance?postcode1=%s&postcode2=%s",
+        formatPostcode(postcode1), formatPostcode(postcode2));
     try {
       String response = ClientIO.doGETRequest(endpoint + request);
       assert (!response.isBlank());
