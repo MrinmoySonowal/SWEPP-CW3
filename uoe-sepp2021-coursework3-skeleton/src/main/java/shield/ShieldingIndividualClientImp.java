@@ -33,39 +33,22 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   private final String NO_DIET = " ";
   private final String POSTCODE_REGEX = "(e|E)(h|H)([0-9]|)[0-9](_| )[0-9][a-zA-Z][a-zA-Z]";
 
-  public void setRegistered(boolean registered) {
-    isRegistered = registered;
-  }
-  public void setPickedFoodBox(FoodBoxOrder pickedFoodBox) {
-    this.pickedFoodBox = pickedFoodBox;
-  }
-  public void setNearestCatererName(String nearestCatererName) {
-    this.nearestCatererName = nearestCatererName;
-  }
-  public void setNearestCateringPostCode(String nearestCateringPostCode) {
-    this.nearestCateringPostCode = nearestCateringPostCode;
-  }
-  public void setChiNum(String chiNum) {
-    this.chiNum = chiNum;
-  }
-  public void setCateringCompaniesArr(Collection<String> cateringCompaniesArr) {
-    this.cateringCompaniesArr = cateringCompaniesArr;
-  }
-  public void setPostcode(String postcode) {
-    this.postcode = postcode;
-  }
-  public void setOrdersDict(Map<Integer, FoodBoxOrder> ordersDict) {
-    this.ordersDict = ordersDict;
-  }
-  public void setDefaultFoodBoxes(Map<Integer, MyMessagingFoodBox> defaultFoodBoxes) {
-    this.defaultFoodBoxes = defaultFoodBoxes;
-  }
-  public Map<Integer, FoodBoxOrder> getOrdersDict() {
-    return ordersDict;
-  }
-  public FoodBoxOrder getPickedFoodBox() {
-    return pickedFoodBox;
-  }
+  private String endpoint;
+  private String chiNum;
+  private boolean isRegistered;
+  /** Dictionary storing shielding individual's orders; key is orderID, value is FoodBoxOrder ref. */
+  private Map<Integer, FoodBoxOrder> ordersDict = new HashMap<>();
+  /** Dictionary storing all default food boxes available in the system; key is food box id, value is MyMessagingFoodBox ref. */
+  private Map<Integer, MyMessagingFoodBox> defaultFoodBoxes = new HashMap<>();
+  private Collection<String> cateringCompaniesArr;
+  private String nearestCatererName;
+  private String nearestCateringPostCode;
+  /** Stores FoodBoxOrder obj of the user-picked food box. Is picked according to food box id. */
+  private FoodBoxOrder pickedFoodBox;
+  private String forename;
+  private String surname;
+  private String phoneNum;
+  private String postcode;
 
   /** Internal field only used for transmission purposes;
    * Temporary format for storing food box details (as returned from server). */
@@ -88,23 +71,6 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     }
   }
 
-  private String endpoint;
-  private String chiNum;
-  private boolean isRegistered;
-  /** Dictionary storing shielding individual's orders; key is orderID, value is FoodBoxOrder ref. */
-  private Map<Integer, FoodBoxOrder> ordersDict = new HashMap<>();
-  /** Dictionary storing all default food boxes available in the system; key is food box id, value is MyMessagingFoodBox ref. */
-  private Map<Integer, MyMessagingFoodBox> defaultFoodBoxes = new HashMap<>();
-  private Collection<String> cateringCompaniesArr;
-  private String nearestCatererName;
-  private String nearestCateringPostCode;
-  /** Stores FoodBoxOrder obj of the user-picked food box. Is picked according to food box id. */
-  private FoodBoxOrder pickedFoodBox;
-  private String forename;
-  private String surname;
-  private String phoneNum;
-  private String postcode;
-
   public ShieldingIndividualClientImp(String endpoint) {
     this.endpoint = endpoint;
   }
@@ -125,7 +91,6 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
       String response = ClientIO.doGETRequest(endpoint + request);
       if (response.equals(ALR_REG)) {
         this.isRegistered = true;
-        // TODO: consider deleting ^ cuz this is just to allow us to pass tests
         return true;
       }
       // unmarshall response:
@@ -207,10 +172,8 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     Map<Integer, MyMessagingFoodBox> responseBoxesDict = new HashMap<>();
     // setup the response recepient:
     List<MyMessagingFoodBox> responseBoxes = new ArrayList<>();
-    // construct the endpoint request:
     String request = String.format("/showFoodBox?orderOption=catering&dietaryPreference=%s", dietaryPreference);
     try {
-      // perform request:
       String response = ClientIO.doGETRequest(endpoint + request);
       // unmarshal response:
       Type listType = new TypeToken<List<MyMessagingFoodBox>>() {}.getType();
@@ -257,21 +220,21 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   // **UPDATE2** REMOVED PARAMETER
   @Override
-  public boolean placeOrder() { // will not use LocalDateTime
+  public boolean placeOrder() {
     assert(this.isRegistered()):"Individual must be registered first";
+    // Order can only be placed every 7 days
     if ((recentOrderTimes.size() > 0) &&
         (ChronoUnit.DAYS.between(recentOrderTimes.getLast(), LocalDate.now()) < 7)) return false;
-    // Order can only be placed every 7 days
     if (this.pickedFoodBox == null) return false;
     String request = String.format("/placeOrder?individual_id=%s" +
                                    "&catering_business_name=%s" +
                                    "&catering_postcode=%s",
                                    this.chiNum, this.nearestCatererName, this.nearestCateringPostCode);
+    // form order data using the pickedFoodBox order
     List<FoodBoxItem> foodBoxItemsList = new ArrayList<>(this.pickedFoodBox.getItemsDict().values());
     Gson gson = new Gson();
     String items = gson.toJson(foodBoxItemsList);
     String data = String.format("{\"contents\":%s}", items);
-    // form order data using the pickedFoodBox order
     try {
       String orderID = ClientIO.doPOSTRequest(endpoint + request, data);
       this.pickedFoodBox.setOrderStatus(ORDER_PLACED);
@@ -295,12 +258,14 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   @Override
   public boolean editOrder(int orderNumber) {
     assert(this.isRegistered()):"Individual must be registered first";
-    // check if orderNumber exists:
     if (!this.ordersDict.containsKey(orderNumber)) return false;
     boolean isOrderPlaced = this.ordersDict.get(orderNumber).getOrderStatus().equals(ORDER_PLACED);
     boolean isOrderPacked = this.ordersDict.get(orderNumber).getOrderStatus().equals(ORDER_PACKED);
     if (!isOrderPlaced && !isOrderPacked) return false;
+
     String request = String.format("/editOrder?order_id=%s", orderNumber);
+
+    // form order data using the pickedFoodBox order
     List<FoodBoxItem> foodBoxItemsList = new ArrayList<>(this.ordersDict.get(orderNumber).getItemsDict().values());
     Gson gson = new Gson();
     String items = gson.toJson(foodBoxItemsList);
@@ -333,6 +298,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     boolean isOrderDelivered = this.ordersDict.get(orderNumber).getOrderStatus().equals(ORDER_DELIVERED);
     boolean isOrderCancelled = this.ordersDict.get(orderNumber).getOrderStatus().equals(ORDER_CANCELLED);
     if(isOrderDispatched || isOrderDelivered || isOrderCancelled) return false;
+
     String request = String.format("/cancelOrder?order_id=%s", orderNumber);
     try {
       String response = ClientIO.doGETRequest(endpoint + request);
@@ -357,12 +323,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   public boolean requestOrderStatus(int orderID) {
     assert(this.isRegistered()):"Individual must be registered first";
     if(!this.ordersDict.containsKey(orderID)) return false;
-    // constructing endpoint request:
+
     String request = String.format("/requestStatus?order_id=%s", orderID);
     try {
-      // perform request:
       String statusResponse = ClientIO.doGETRequest(endpoint + request);
-      // check if response is valid:
       List<String> validStatuses = Arrays.asList(ORDER_PLACED, ORDER_PACKED, ORDER_DISPATCHED,
                                                  ORDER_DELIVERED, ORDER_CANCELLED, ORDER_NOT_FOUND);
       boolean isValidResponse = validStatuses.contains(statusResponse);
@@ -387,12 +351,11 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   @Override
   public Collection<String> getCateringCompanies() {
     assert(this.isRegistered()):"Individual must be registered first";
-    // construct endpoint request
+
     String request = "/getCaterers";
     // construct receiver structure:
     List<String> caterers = new ArrayList<>();
     try {
-      // perform request:
       String response = ClientIO.doGETRequest(endpoint + request);
       // unmarshal response:
       Type listType = new TypeToken<List<String>>() {}.getType();
@@ -415,9 +378,9 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
   @Override
   public float getDistance(String postcode1, String postcode2) {
     assert(postcode1 != null && postcode2 != null) : "Postcode cannot be null.";
+
     String request = String.format("/distance?postcode1=%s&postcode2=%s", formatPostcode(postcode1), formatPostcode(postcode2));
     try {
-      // perform request:
       String response = ClientIO.doGETRequest(endpoint + request);
       assert (!response.isBlank());
       return Float.parseFloat(response);
@@ -474,7 +437,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public int getFoodBoxNumber() {
-    this.defaultFoodBoxes = getAllDefaultFoodBoxesFromServer();
+    this.defaultFoodBoxes = getAllDefaultFoodBoxesFromServer();  // update client-side 'cache'
     return defaultFoodBoxes.size();
   }
 
@@ -486,7 +449,8 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public String getDietaryPreferenceForFoodBox(int foodBoxId) {
-    assert(this.defaultFoodBoxes.containsKey(foodBoxId)) : String.format("%d is an invalid foodBoxId", foodBoxId);
+    assert(this.defaultFoodBoxes.containsKey(foodBoxId)) :
+            String.format("%d is an invalid foodBoxId", foodBoxId);
     return this.defaultFoodBoxes.get(foodBoxId).diet;
   }
 
@@ -498,7 +462,8 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public int getItemsNumberForFoodBox(int foodBoxId) {
-    assert(this.defaultFoodBoxes.containsKey(foodBoxId)) : String.format("%d is an invalid foodBoxId", foodBoxId);
+    assert(this.defaultFoodBoxes.containsKey(foodBoxId)) :
+            String.format("%d is an invalid foodBoxId", foodBoxId);
     Map<Integer, MyMessagingFoodBox> foodBoxesDict = getAllDefaultFoodBoxes();
     return foodBoxesDict.get(foodBoxId).contents.size();
   }
@@ -511,7 +476,8 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public Collection<Integer> getItemIdsForFoodBox(int foodboxId) {
-    assert(this.defaultFoodBoxes.containsKey(foodboxId)) : String.format("%d is an invalid foodBoxId", foodboxId);
+    assert(this.defaultFoodBoxes.containsKey(foodboxId)) :
+            String.format("%d is an invalid foodBoxId", foodboxId);
     Map<Integer, MyMessagingFoodBox> foodBoxesDict = getAllDefaultFoodBoxes();
     // find set of itemIds for food box with id == foodboxId:
     return new ArrayList<>(foodBoxesDict.get(foodboxId).getContentsDict().keySet());
@@ -526,7 +492,8 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public String getItemNameForFoodBox(int itemId, int foodBoxId) {
-    assert(this.defaultFoodBoxes.containsKey(foodBoxId)) : String.format("%d is an invalid foodBoxId", foodBoxId);
+    assert(this.defaultFoodBoxes.containsKey(foodBoxId)) :
+            String.format("%d is an invalid foodBoxId", foodBoxId);
     Map<Integer, MyMessagingFoodBox> foodBoxesDict = getAllDefaultFoodBoxes();
     return foodBoxesDict.get(foodBoxId).getContentsDict().get(itemId).getName();
   }
@@ -540,8 +507,10 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    */
   @Override
   public int getItemQuantityForFoodBox(int itemId, int foodBoxId) {
-    assert(this.defaultFoodBoxes.containsKey(foodBoxId)) : String.format("%d is an invalid foodBoxId", foodBoxId);
-    assert(this.defaultFoodBoxes.get(foodBoxId).getContentsDict().containsKey(itemId)) : String.format("%d is an invalid itemId", itemId);
+    assert(this.defaultFoodBoxes.containsKey(foodBoxId)) :
+            String.format("%d is an invalid foodBoxId", foodBoxId);
+    assert(this.defaultFoodBoxes.get(foodBoxId).getContentsDict().containsKey(itemId)) :
+            String.format("%d is an invalid itemId", itemId);
     Map<Integer, MyMessagingFoodBox> foodBoxesDict = getAllDefaultFoodBoxes();
     return foodBoxesDict.get(foodBoxId).getContentsDict().get(itemId).getQuantity();
   }
@@ -553,7 +522,7 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
    * @return true if the requested foodbox was picked
    */
   @Override
-  public boolean pickFoodBox(int foodBoxId) {                                       // ### ??? ###
+  public boolean pickFoodBox(int foodBoxId) {
     assert(this.isRegistered()):"Individual must be registered first";
     // update local default food boxes 'cache' via server query:
     this.defaultFoodBoxes = getAllDefaultFoodBoxesFromServer();
@@ -715,5 +684,40 @@ public class ShieldingIndividualClientImp implements ShieldingIndividualClient {
     this.nearestCatererName = nearestCatererName;
     this.nearestCateringPostCode = nearestCatererPostcode;
     return nearestCatererName;
+  }
+
+
+  public void setRegistered(boolean registered) {
+    isRegistered = registered;
+  }
+  public void setPickedFoodBox(FoodBoxOrder pickedFoodBox) {
+    this.pickedFoodBox = pickedFoodBox;
+  }
+  public void setNearestCatererName(String nearestCatererName) {
+    this.nearestCatererName = nearestCatererName;
+  }
+  public void setNearestCateringPostCode(String nearestCateringPostCode) {
+    this.nearestCateringPostCode = nearestCateringPostCode;
+  }
+  public void setChiNum(String chiNum) {
+    this.chiNum = chiNum;
+  }
+  public void setCateringCompaniesArr(Collection<String> cateringCompaniesArr) {
+    this.cateringCompaniesArr = cateringCompaniesArr;
+  }
+  public void setPostcode(String postcode) {
+    this.postcode = postcode;
+  }
+  public void setOrdersDict(Map<Integer, FoodBoxOrder> ordersDict) {
+    this.ordersDict = ordersDict;
+  }
+  public void setDefaultFoodBoxes(Map<Integer, MyMessagingFoodBox> defaultFoodBoxes) {
+    this.defaultFoodBoxes = defaultFoodBoxes;
+  }
+  public Map<Integer, FoodBoxOrder> getOrdersDict() {
+    return ordersDict;
+  }
+  public FoodBoxOrder getPickedFoodBox() {
+    return pickedFoodBox;
   }
 }

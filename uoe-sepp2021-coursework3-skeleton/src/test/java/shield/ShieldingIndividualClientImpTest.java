@@ -62,6 +62,7 @@ public class ShieldingIndividualClientImpTest {
     clientImp = new ShieldingIndividualClientImp(clientProps.getProperty("endpoint"));
     cateringImp = new CateringCompanyClientImp(clientProps.getProperty("endpoint"));
 
+    // HTTP to register a shielding individual:
     String requestRegUser = String.format("/registerShieldingIndividual?CHI=%s", this.testCHI);
     try {
       ClientIO.doGETRequest(clientProps.getProperty("endpoint") + requestRegUser);
@@ -69,6 +70,7 @@ public class ShieldingIndividualClientImpTest {
       e.printStackTrace();
     }
 
+    // HTTP to register a caterer:
     String requestRegCaterer = String.format("/registerCateringCompany?business_name=%s&postcode=%s",
             this.testCaterName,this.testCaterPostcode);
     try {
@@ -77,6 +79,7 @@ public class ShieldingIndividualClientImpTest {
       e.printStackTrace();
     }
 
+    // HTTP to place an order:
     String requestPlaceOrder = String.format("/placeOrder?individual_id=%s" +
                     "&catering_business_name=%s" +
                     "&catering_postcode=%s",
@@ -88,6 +91,7 @@ public class ShieldingIndividualClientImpTest {
       e.printStackTrace();
     }
 
+    // Randomly generate a valid CHI:
     Random rand = new Random();
     String dateTime = DateTimeFormatter.ofPattern("ddMMyy").format(LocalDateTime.now());
     String lastFour = String.valueOf(rand.nextInt(9999 - 1000) + 1000);
@@ -112,15 +116,6 @@ public class ShieldingIndividualClientImpTest {
             "Field must be true once registered.");
     assertEquals(clientImp.getCHI(), this.validRngCHI,
             "Client-stored CHI must be the same as inputted CHI.");
-
-    // TODO clarify: how to get indiv details from server if alr registered (and using new client obj),
-    //  ANS: write as part of report as a limitation
-
-    // TODO how to test functions that are not part of the java interfaces?
-    //  ANS: dont need to test the private mtds unless they're complex enough in which test them separately
-
-    // TODO clarify postcode formatting error from server function (e.g. eh0111),
-    //  ANS: should be of correct format, but need to do our own checks
   }
 
   @Test
@@ -186,10 +181,8 @@ public class ShieldingIndividualClientImpTest {
             "Working method should return IDs for boxes with diet = 'pollotarian'");
     assertEquals(clientImp.showFoodBoxes("vegan"), Collections.singletonList("5"),
             "Working method should return IDs for boxes with diet = 'vegan'");
-
     assertNotEquals(clientImp.showFoodBoxes(" "), Collections.EMPTY_LIST,
             "'No dietary preference' should be an allowed diet");
-
     assertEquals(clientImp.showFoodBoxes("Gibberish"), Collections.EMPTY_LIST,
             "Working method should return no IDs since 'Gibberish' is not a valid diet type");
   }
@@ -198,6 +191,7 @@ public class ShieldingIndividualClientImpTest {
   @DisplayName("Test correct operation of placeOrder")
   public void testShieldingIndividualPlaceOrder() {
     clientImp.setChiNum(this.testCHI);
+
     AssertionError notRegisteredErr = assertThrows(AssertionError.class, () -> {
       clientImp.editOrder(this.testOrderId);
     });
@@ -752,7 +746,7 @@ public class ShieldingIndividualClientImpTest {
     clientImp.setOrdersDict(ordersDict);
 
     assertFalse(clientImp.setItemQuantityForOrder(1, this.testOrderId,1 ),
-            "Working method should return false when orderId is not found");
+        "Working method should return false when orderId is not found");
 
     FoodBoxOrder order = new FoodBoxOrder();
     Map<Integer, FoodBoxItem> itemsDict = new HashMap<>();
