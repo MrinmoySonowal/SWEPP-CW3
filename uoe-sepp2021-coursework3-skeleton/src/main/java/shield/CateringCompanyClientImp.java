@@ -33,6 +33,7 @@ public class CateringCompanyClientImp implements CateringCompanyClient {
    */
   @Override
   public boolean registerCateringCompany(String name, String postCode) {
+    if (name==null || postCode==null) return false;
     assert(Pattern.matches(POSTCODE_REGEX_STRICT, postCode)) : String.format("Postcode %s is the wrong format", postCode);
     String request = String.format("/registerCateringCompany?business_name=%s&postcode=%s",name,postCode);
     try {

@@ -53,6 +53,8 @@ public class SupermarketClientImpTest {
   @Test
   @DisplayName("Testing register new supermarket")
   public void testSupermarketNewRegistration() {
+    assertFalse(client.registerSupermarket(null, "EH12_3EY"));
+    assertFalse(client.registerSupermarket("supermarket1", null));
     Random rand = new Random();
     String name = String.valueOf(rand.nextInt(10000));
     String postcode = "EH16_5AY";

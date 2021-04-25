@@ -87,6 +87,8 @@ public class CateringCompanyClientImpTest {
   @Test
   @DisplayName("Testing registerCateringCompany method")
   public void testCateringCompanyNewRegistration() {
+    assertFalse(clientImp.registerCateringCompany(null, "EH16_2AY"));
+    assertFalse(clientImp.registerCateringCompany("caterer1", null));
     Random rand = new Random();
     String name = "Caterer" + rand.nextInt(10000);
     String badPostcode = String.valueOf(rand.nextInt(10000));
